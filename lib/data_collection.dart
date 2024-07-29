@@ -500,7 +500,7 @@ class _DataCollectionState extends State<DataCollection> {
                       reps = int.tryParse(value) ?? 0;
                     });
                   },
-                  decoration: const InputDecoration(labelText: 'Number of Reps'),
+                  decoration: const InputDecoration(labelText: 'Number of Reps/Time'),
                 ),
                 TextFormField(
                   onChanged: (String value) {
@@ -659,7 +659,7 @@ class _DataCollectionState extends State<DataCollection> {
                       reps = int.tryParse(value) ?? 0;
                     });
                   },
-                  decoration: const InputDecoration(labelText: 'Number of Reps'),
+                  decoration: const InputDecoration(labelText: 'Number of Reps/Time'),
                 ),
                 TextFormField(
                   onChanged: (String value) {
