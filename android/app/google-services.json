@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "658994607022",
+    "project_id": "zoomer-data-collection",
+    "storage_bucket": "zoomer-data-collection.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:658994607022:android:e75848203bf4783025ce3f",
+        "android_client_info": {
+          "package_name": "com.golain.data_collection"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBlU5CazHmPvYRuuuiVRrA65ROAAdDwtAQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
