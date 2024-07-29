@@ -65,5 +65,4 @@ class DefaultFirebaseOptions {
     storageBucket: 'zoomer-data-collection.appspot.com',
     iosBundleId: 'com.golain.dataCollection',
   );
-
 }

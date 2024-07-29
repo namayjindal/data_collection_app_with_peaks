@@ -138,7 +138,8 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
     try {
       List<BluetoothService> services = await device.discoverServices();
       for (BluetoothService service in services) {
-        for (BluetoothCharacteristic characteristic in service.characteristics) {
+        for (BluetoothCharacteristic characteristic
+            in service.characteristics) {
           if (characteristic.properties.notify) {
             await characteristic.setNotifyValue(true);
             List<int> value = await characteristic.read();

@@ -129,10 +129,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     String? school = prefs.getString('school');
     String? g = prefs.getString('grade');
-    setState(() {
-      _schoolNameController.text = school!;
-      grade = g!;
-    });
+    if (school != null && g != null) {
+      setState(() {
+        _schoolNameController.text = school;
+        grade = g;
+        exercise = gradeExercises[grade]![0];
+      });
+    }
   }
 
   void saveAndNavigate() async {

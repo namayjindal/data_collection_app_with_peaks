@@ -154,36 +154,36 @@ class _DataCollectionState extends State<DataCollection> {
   }
 
   List<String> generateHeaderRow() {
-  List<BluetoothDevice> connectedDevices = FlutterBluePlus.connectedDevices;
-  List<String> headers = [];
+    List<BluetoothDevice> connectedDevices = FlutterBluePlus.connectedDevices;
+    List<String> headers = [];
 
-  for (BluetoothDevice device in connectedDevices) {
-    // Find the matching sensor prefix for the connected device
-    var matchingSensor = sensorPrefixes.firstWhere(
-      (sensor) => device.name.contains(sensor['name']!),
-      orElse: () => {'name': '', 'prefix': ''},
-    );
+    for (BluetoothDevice device in connectedDevices) {
+      // Find the matching sensor prefix for the connected device
+      var matchingSensor = sensorPrefixes.firstWhere(
+        (sensor) => device.name.contains(sensor['name']!),
+        orElse: () => {'name': '', 'prefix': ''},
+      );
 
-    String prefix = matchingSensor['prefix']!;
+      String prefix = matchingSensor['prefix']!;
 
-    // If a matching prefix is found, add the headers for this device
-    if (prefix.isNotEmpty) {
-      headers.addAll([
-        '${prefix}timestamp',
-        '${prefix}index',
-        '${prefix}accel_x',
-        '${prefix}accel_y',
-        '${prefix}accel_z',
-        '${prefix}gyro_x',
-        '${prefix}gyro_y',
-        '${prefix}gyro_z',
-        '${prefix}battery_percentage',
-      ]);
+      // If a matching prefix is found, add the headers for this device
+      if (prefix.isNotEmpty) {
+        headers.addAll([
+          '${prefix}timestamp',
+          '${prefix}index',
+          '${prefix}accel_x',
+          '${prefix}accel_y',
+          '${prefix}accel_z',
+          '${prefix}gyro_x',
+          '${prefix}gyro_y',
+          '${prefix}gyro_z',
+          '${prefix}battery_percentage',
+        ]);
+      }
     }
-  }
 
-  return headers;
-}
+    return headers;
+  }
 
   Future<String> generateCsvFile(List<List<dynamic>> data) async {
     List<String> headers = generateHeaderRow();
@@ -197,7 +197,8 @@ class _DataCollectionState extends State<DataCollection> {
     return path;
   }
 
-  Future<void> uploadFileToFirebase(String filePath, String additionalInfo) async {
+  Future<void> uploadFileToFirebase(
+      String filePath, String additionalInfo) async {
     File file = File(filePath);
     try {
       showDialog(
@@ -216,11 +217,14 @@ class _DataCollectionState extends State<DataCollection> {
         },
       );
 
-      final timestamp = DateTime.now().toString().substring(0, DateTime.now().toString().length - 5);
-      String fileName = '${widget.studentName}-${widget.grade}-$reps-$label-$timestamp';
+      final timestamp = DateTime.now()
+          .toString()
+          .substring(0, DateTime.now().toString().length - 5);
+      String fileName =
+          '${widget.studentName}-${widget.grade}-$reps-$label-$timestamp';
       Reference storageRef = FirebaseStorage.instance
           .ref('${widget.schoolName}/${widget.exerciseName}/$fileName.csv');
-      
+
       // Create metadata
       SettableMetadata metadata = SettableMetadata(
         customMetadata: {
@@ -239,13 +243,14 @@ class _DataCollectionState extends State<DataCollection> {
       Navigator.of(context).pop();
 
       dev.log('File uploaded successfully with metadata');
-      
+
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
             title: const Text('Upload Status'),
-            content: const Text('Data saved successfully with additional information!'),
+            content: const Text(
+                'Data saved successfully with additional information!'),
             actions: <Widget>[
               TextButton(
                 onPressed: () {
@@ -346,13 +351,12 @@ class _DataCollectionState extends State<DataCollection> {
           );
         }
       });
-
-      
     }
   }
 
   void processData(List<int> value, int sensorIndex) {
-    if (!isProcessingData || shouldStopCollecting) return; // Skip processing if paused or stopped
+    if (!isProcessingData || shouldStopCollecting)
+      return; // Skip processing if paused or stopped
 
     var v = Uint8List.fromList(value);
     ByteData byteData = ByteData.sublistView(v);
@@ -367,7 +371,7 @@ class _DataCollectionState extends State<DataCollection> {
             byteData.buffer.asByteData(start, ZephyrData.expectedLength);
         try {
           var zephyrData = ZephyrData.fromBytes(sensorDataByteData);
-          
+
           // Check if it's the first reading and the index is greater than 10
           if (isFirstReading && zephyrData.field2 > 10) {
             dev.log('Discarding first reading with index > 10');
@@ -410,9 +414,7 @@ class _DataCollectionState extends State<DataCollection> {
     }
   }
 
-
   void restartDataCollection() async {
-
     elapsedTimer?.cancel();
     // for (var characteristic in characteristics) {
     //   if (characteristic != null) {
@@ -431,8 +433,10 @@ class _DataCollectionState extends State<DataCollection> {
 
     // getData();
 
-    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const HomeScreen()), (route) => false);
-
+    Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        (route) => false);
   }
 
   Future<void> stopCollection() async {
@@ -500,13 +504,15 @@ class _DataCollectionState extends State<DataCollection> {
                       reps = int.tryParse(value) ?? 0;
                     });
                   },
-                  decoration: const InputDecoration(labelText: 'Number of Reps/Time'),
+                  decoration:
+                      const InputDecoration(labelText: 'Number of Reps/Time'),
                 ),
                 TextFormField(
                   onChanged: (String value) {
                     additionalInfo = value;
                   },
-                  decoration: const InputDecoration(labelText: 'Additional Information'),
+                  decoration: const InputDecoration(
+                      labelText: 'Additional Information'),
                 ),
               ],
             ),
@@ -549,7 +555,10 @@ class _DataCollectionState extends State<DataCollection> {
 
     sensorData.clear();
     csvData.clear();
-    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const HomeScreen()), (route) => false);
+    Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        (route) => false);
   }
 
   void bandCallibration() async {
@@ -659,13 +668,15 @@ class _DataCollectionState extends State<DataCollection> {
                       reps = int.tryParse(value) ?? 0;
                     });
                   },
-                  decoration: const InputDecoration(labelText: 'Number of Reps/Time'),
+                  decoration:
+                      const InputDecoration(labelText: 'Number of Reps/Time'),
                 ),
                 TextFormField(
                   onChanged: (String value) {
                     additionalInfo = value;
                   },
-                  decoration: const InputDecoration(labelText: 'Additional Information'),
+                  decoration: const InputDecoration(
+                      labelText: 'Additional Information'),
                 ),
               ],
             ),
@@ -699,7 +710,8 @@ class _DataCollectionState extends State<DataCollection> {
           builder: (BuildContext context) {
             return AlertDialog(
               title: const Text('Upload Success'),
-              content: const Text('Data has been successfully saved and uploaded.'),
+              content:
+                  const Text('Data has been successfully saved and uploaded.'),
               actions: <Widget>[
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
@@ -714,7 +726,6 @@ class _DataCollectionState extends State<DataCollection> {
 
     // Clear the data after saving
     csvData.clear();
-
   }
 
   Future<void> resumeCollection() async {
@@ -804,7 +815,9 @@ class _DataCollectionState extends State<DataCollection> {
             const SizedBox(height: 20),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
-              onPressed: isCollecting ? (isPaused ? resumeCollection : pauseCollection) : null,
+              onPressed: isCollecting
+                  ? (isPaused ? resumeCollection : pauseCollection)
+                  : null,
               child: Text(
                 isPaused ? 'Resume' : 'Pause',
                 style: const TextStyle(color: Colors.white),
