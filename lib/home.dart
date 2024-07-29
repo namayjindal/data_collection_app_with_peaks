@@ -1,5 +1,6 @@
 import 'package:data_collection/bluetooth.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,19 +16,82 @@ class _HomeScreenState extends State<HomeScreen> {
   String grade = 'Nursery';
   final List<String> genders = ['Male', 'Female'];
 
-  final Map<String, List> grade_exercises = {
-    'Nursery': ["Step Down from Height (dominant)", "Step Down from Height (non-dominant)", "Step over an obstacle (dominant)", "Step over an obstacle (non-dominant)", "Jump symmetrically", "Hit Balloon Up"],
-    'LKG': ["Stand on one leg (dominant)", "Step over an obstacle (non-dominant)", "Hop forward on one leg (dominant)", "Hop forward on one leg (non-dominant)", "Jumping Jack without Clap", "Hit Balloon Up"],
-    'SKG': ["Stand on one leg (dominant)", "Stand on one leg (non-dominant)", "Hop forward on one leg (dominant)", "Hop forward on one leg (non-dominant)", "Jumping Jack without Clap", "Hit Balloon Up"],
-    'Grade 1': ["Stand on one leg (dominant)", "Stand on one leg (non-dominant)", "Hop 9 metres (dominant)", "Hop forward on one leg (non-dominant)", "Skipping", "Ball Bounce and Catch"],
-    'Grade 2': ["Stand on one leg (dominant)", "Stand on one leg (non-dominant)", "Hop 9 metres (dominant)", "Hop forward on one leg (non-dominant)", "Criss Cross with leg forward", "Ball Bounce and Catch"],
-    'Grade 3': ["Stand on one leg (dominant)", "Stand on one leg (non-dominant)", "Hop 9 metres (dominant)", "Hop 9 metres (non-dominant)", "Criss Cross with leg forward", "Dribbling in Fig-O"],
-    'Grade 4': ["Stand on one leg (dominant)", "Stand on one leg (non-dominant)", "Hop 9 metres (dominant)", "Hop 9 metres (non-dominant)", "Criss Cross with leg forward", "Dribbling in Fig-O"],
-    'Grade 5': ["Stand on one leg (dominant)", "Stand on one leg (non-dominant)", "Hop 9 metres (dominant)", "Hop 9 metres (non-dominant)", "Criss Cross with Clap", "Dribbling in Fig-8"],
-    'Grade 6': ["Stand on one leg (dominant)", "Stand on one leg (non-dominant)", "Hop 9 metres (dominant)", "Hop 9 metres (non-dominant)", "Criss Cross with Clap", "Dribbling in Fig-8"],
+  final Map<String, List> gradeExercises = {
+    'Nursery': [
+      "Step Down from Height (dominant)",
+      "Step Down from Height (non-dominant)",
+      "Step over an obstacle (dominant)",
+      "Step over an obstacle (non-dominant)",
+      "Jump symmetrically",
+      "Hit Balloon Up"
+    ],
+    'LKG': [
+      "Stand on one leg (dominant)",
+      "Step over an obstacle (non-dominant)",
+      "Hop forward on one leg (dominant)",
+      "Hop forward on one leg (non-dominant)",
+      "Jumping Jack without Clap",
+      "Hit Balloon Up"
+    ],
+    'SKG': [
+      "Stand on one leg (dominant)",
+      "Stand on one leg (non-dominant)",
+      "Hop forward on one leg (dominant)",
+      "Hop forward on one leg (non-dominant)",
+      "Jumping Jack without Clap",
+      "Hit Balloon Up"
+    ],
+    'Grade 1': [
+      "Stand on one leg (dominant)",
+      "Stand on one leg (non-dominant)",
+      "Hop 9 metres (dominant)",
+      "Hop forward on one leg (non-dominant)",
+      "Skipping",
+      "Ball Bounce and Catch"
+    ],
+    'Grade 2': [
+      "Stand on one leg (dominant)",
+      "Stand on one leg (non-dominant)",
+      "Hop 9 metres (dominant)",
+      "Hop forward on one leg (non-dominant)",
+      "Criss Cross with leg forward",
+      "Ball Bounce and Catch"
+    ],
+    'Grade 3': [
+      "Stand on one leg (dominant)",
+      "Stand on one leg (non-dominant)",
+      "Hop 9 metres (dominant)",
+      "Hop 9 metres (non-dominant)",
+      "Criss Cross with leg forward",
+      "Dribbling in Fig-O"
+    ],
+    'Grade 4': [
+      "Stand on one leg (dominant)",
+      "Stand on one leg (non-dominant)",
+      "Hop 9 metres (dominant)",
+      "Hop 9 metres (non-dominant)",
+      "Criss Cross with leg forward",
+      "Dribbling in Fig-O"
+    ],
+    'Grade 5': [
+      "Stand on one leg (dominant)",
+      "Stand on one leg (non-dominant)",
+      "Hop 9 metres (dominant)",
+      "Hop 9 metres (non-dominant)",
+      "Criss Cross with Clap",
+      "Dribbling in Fig-8"
+    ],
+    'Grade 6': [
+      "Stand on one leg (dominant)",
+      "Stand on one leg (non-dominant)",
+      "Hop 9 metres (dominant)",
+      "Hop 9 metres (non-dominant)",
+      "Criss Cross with Clap",
+      "Dribbling in Fig-8"
+    ],
   };
 
-  String exercise = '';
+  String exercise = 'Step Down from Height (dominant)';
   final Map<String, List> exercises = {
     "Step Down from Height (dominant)": [3, 4],
     "Step Down from Height (non-dominant)": [3, 4],
@@ -54,6 +118,48 @@ class _HomeScreenState extends State<HomeScreen> {
     "Hop 9 metres (dominant)": [3, 4],
     "Hop 9 metres (non-dominant)": [3, 4],
   };
+
+  @override
+  void initState() {
+    super.initState();
+    getData();
+  }
+
+  void getData() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? school = prefs.getString('school');
+    String? g = prefs.getString('grade');
+    setState(() {
+      _schoolNameController.text = school!;
+      grade = g!;
+    });
+  }
+
+  void saveAndNavigate() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('school', _schoolNameController.text);
+    await prefs.setString('grade', grade);
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BluetoothScreen(
+          sensors: exercises[exercise] ?? [],
+          schoolName: _schoolNameController.text,
+          studentName: _studentNameController.text,
+          grade: grade,
+          exerciseName: exercise,
+          allowedDeviceNames: const [
+            'Sense Right Hand',
+            'Sense Left Hand',
+            'Sense Right Leg',
+            'Sense Left Leg',
+            'Sense Ball'
+          ], // Add your allowed device names here
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -104,7 +210,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   hintText: 'Select Grade',
                 ),
                 value: grade,
-                items: grade_exercises.keys.map((grade) {
+                items: gradeExercises.keys.map((grade) {
                   return DropdownMenuItem<String>(
                     value: grade,
                     child: Text(grade),
@@ -113,6 +219,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onChanged: (newValue) {
                   setState(() {
                     grade = newValue!;
+                    exercise = gradeExercises[grade]![0];
                   });
                 },
               ),
@@ -149,7 +256,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   hintText: 'Select Exercise',
                 ),
                 value: exercise,
-                items: exercises.keys.map((exercise) {
+                items: gradeExercises[grade]!.map((exercise) {
                   return DropdownMenuItem<String>(
                     value: exercise,
                     child: Text(exercise),
@@ -164,21 +271,7 @@ class _HomeScreenState extends State<HomeScreen> {
               SizedBox(height: screenHeight * 0.07),
               Center(
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => BluetoothScreen(
-                          sensors: exercises[exercise] ?? [],
-                          schoolName: _schoolNameController.text,
-                          studentName: _studentNameController.text,
-                          grade: grade,
-                          exerciseName: exercise,
-                          allowedDeviceNames: ['Sense Right Hand', 'Sense Left Hand', 'Sense Right Leg', 'Sense Left Leg', 'Sense Ball'], // Add your allowed device names here
-                        ),
-                      ),
-                    );
-                  },
+                  onPressed: saveAndNavigate,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.black,
                     padding: EdgeInsets.symmetric(
