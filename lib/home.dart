@@ -14,42 +14,45 @@ class _HomeScreenState extends State<HomeScreen> {
   String gender = 'Male';
   String grade = 'Nursery';
   final List<String> genders = ['Male', 'Female'];
-  final List<String> grades = [
-    'Nursery',
-    'Kindergarten',
-    '1st',
-    '2nd',
-    '3rd',
-    '4th',
-    '5th',
-    '6th'
-  ];
-  String exercise = 'single_hand';
+
+  final Map<String, List> grade_exercises = {
+    'Nursery': ["Step Down from Height (dominant)", "Step Down from Height (non-dominant)", "Step over an obstacle (dominant)", "Step over an obstacle (non-dominant)", "Jump symmetrically", "Hit Balloon Up"],
+    'LKG': ["Stand on one leg (dominant)", "Step over an obstacle (non-dominant)", "Hop forward on one leg (dominant)", "Hop forward on one leg (non-dominant)", "Jumping Jack without Clap", "Hit Balloon Up"],
+    'SKG': ["Stand on one leg (dominant)", "Stand on one leg (non-dominant)", "Hop forward on one leg (dominant)", "Hop forward on one leg (non-dominant)", "Jumping Jack without Clap", "Hit Balloon Up"],
+    'Grade 1': ["Stand on one leg (dominant)", "Stand on one leg (non-dominant)", "Hop 9 metres (dominant)", "Hop forward on one leg (non-dominant)", "Skipping", "Ball Bounce and Catch"],
+    'Grade 2': ["Stand on one leg (dominant)", "Stand on one leg (non-dominant)", "Hop 9 metres (dominant)", "Hop forward on one leg (non-dominant)", "Criss Cross with leg forward", "Ball Bounce and Catch"],
+    'Grade 3': ["Stand on one leg (dominant)", "Stand on one leg (non-dominant)", "Hop 9 metres (dominant)", "Hop 9 metres (non-dominant)", "Criss Cross with leg forward", "Dribbling in Fig-O"],
+    'Grade 4': ["Stand on one leg (dominant)", "Stand on one leg (non-dominant)", "Hop 9 metres (dominant)", "Hop 9 metres (non-dominant)", "Criss Cross with leg forward", "Dribbling in Fig-O"],
+    'Grade 5': ["Stand on one leg (dominant)", "Stand on one leg (non-dominant)", "Hop 9 metres (dominant)", "Hop 9 metres (non-dominant)", "Criss Cross with Clap", "Dribbling in Fig-8"],
+    'Grade 6': ["Stand on one leg (dominant)", "Stand on one leg (non-dominant)", "Hop 9 metres (dominant)", "Hop 9 metres (non-dominant)", "Criss Cross with Clap", "Dribbling in Fig-8"],
+  };
+
+  String exercise = '';
   final Map<String, List> exercises = {
-    "single_hand": [1],
-    "both_hands": [3, 4],
-    "hands_and_ball": [1, 2, 3],
-    "all_sensors": [1, 2, 3, 4, 5],
+    "Step Down from Height (dominant)": [3, 4],
+    "Step Down from Height (non-dominant)": [3, 4],
+    "Step over an obstacle (dominant)": [3, 4],
+    "Step over an obstacle (non-dominant)": [3, 4],
+    "Jump symmetrically": [3, 4],
+    "Hit Balloon Up": [1, 2],
+    "Stand on one leg (dominant)": [3, 4],
+    "Stand on one leg (non-dominant)": [3, 4],
+    "Hop forward on one leg (dominant)": [3, 4],
+    "Hop forward on one leg (non-dominant)": [3, 4],
+    "Jumping Jack without Clap": [3, 4],
     "Dribbling in Fig - 8": [1, 2, 3, 4, 5],
     "Dribbling in Fig - O": [1, 2, 3, 4, 5],
     "Jumping Jack with Clap": [1, 2, 3, 4],
-    "Jumping Jack without Clap": [3, 4],
     "Criss Cross with Clap": [1, 2, 3, 4],
     "Criss Cross without Clap": [3, 4],
     "Criss Cross with leg forward": [3, 4],
     "Skipping": [1, 2, 3, 4],
     "Large Ball Bounce and Catch": [1, 2, 5],
-    "Hit Balloon Up": [1, 2],
     "Forward Backward Spread Legs and Back": [3, 4],
     "Alternate feet forward backward": [3, 4],
-    "Jump symmetrically": [3, 4],
     "Jump asymmetrically": [3, 4],
-    "Hop between lines": [3, 4],
-    "Hope forward on one leg": [3, 4],
-    "Step Down from Height": [3, 4],
-    "Step over an obstacle": [3, 4],
-    "Stand on one leg (dominant)": [3, 4],
-    "Stand on one leg (non-dominant)": [3, 4],
+    "Hop 9 metres (dominant)": [3, 4],
+    "Hop 9 metres (non-dominant)": [3, 4],
   };
 
   @override
@@ -101,7 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   hintText: 'Select Grade',
                 ),
                 value: grade,
-                items: grades.map((grade) {
+                items: grade_exercises.keys.map((grade) {
                   return DropdownMenuItem<String>(
                     value: grade,
                     child: Text(grade),
