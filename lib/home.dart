@@ -11,7 +11,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _schoolNameController = TextEditingController();
-  final TextEditingController _studentNameController = TextEditingController();
+  // final TextEditingController _studentNameController = TextEditingController();
   String gender = 'Male';
   String grade = 'Nursery';
   final List<String> genders = ['Male', 'Female'];
@@ -63,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
       "Hop 9 metres (dominant)",
       "Hop 9 metres (non-dominant)",
       "Criss Cross with leg forward",
-      "Dribbling in Fig-O"
+      "Dribbling in Fig - O"
     ],
     'Grade 4': [
       "Stand on one leg (dominant)",
@@ -71,7 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
       "Hop 9 metres (dominant)",
       "Hop 9 metres (non-dominant)",
       "Criss Cross with leg forward",
-      "Dribbling in Fig-O"
+      "Dribbling in Fig - O"
     ],
     'Grade 5': [
       "Stand on one leg (dominant)",
@@ -79,7 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
       "Hop 9 metres (dominant)",
       "Hop 9 metres (non-dominant)",
       "Criss Cross with Clap",
-      "Dribbling in Fig-8"
+      "Dribbling in Fig - 8"
     ],
     'Grade 6': [
       "Stand on one leg (dominant)",
@@ -87,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
       "Hop 9 metres (dominant)",
       "Hop 9 metres (non-dominant)",
       "Criss Cross with Clap",
-      "Dribbling in Fig-8"
+      "Dribbling in Fig - 8"
     ],
   };
 
@@ -149,7 +149,7 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (context) => BluetoothScreen(
           sensors: exercises[exercise] ?? [],
           schoolName: _schoolNameController.text,
-          studentName: _studentNameController.text,
+          // studentName: _studentNameController.text,
           grade: grade,
           exerciseName: exercise,
           allowedDeviceNames: const [
@@ -193,15 +193,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 decoration: const InputDecoration(label: Text('School Name')),
               ),
-              SizedBox(height: screenHeight * 0.07),
-              TextField(
-                controller: _studentNameController,
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: fontsize,
-                ),
-                decoration: const InputDecoration(label: Text('Student Name')),
-              ),
+              // SizedBox(height: screenHeight * 0.07),
+              // TextField(
+              //   controller: _studentNameController,
+              //   style: TextStyle(
+              //     color: Colors.black,
+              //     fontSize: fontsize,
+              //   ),
+              //   decoration: const InputDecoration(label: Text('Student Name')),
+              // ),
               SizedBox(height: screenHeight * 0.07),
               Text(
                 'Grade',

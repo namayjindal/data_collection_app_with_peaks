@@ -15,13 +15,13 @@ class BluetoothScreen extends StatefulWidget {
     required this.exerciseName,
     required this.schoolName,
     required this.grade,
-    required this.studentName,
+    // required this.studentName,
     required this.allowedDeviceNames,
   });
 
   final List sensors;
   final String schoolName;
-  final String studentName;
+  // final String studentName;
   final String exerciseName;
   final String grade;
   final List<String> allowedDeviceNames;
@@ -146,6 +146,7 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
             if (value.isNotEmpty) {
               var byteData = ByteData.sublistView(Uint8List.fromList(value));
               var zephyrData = ZephyrData.fromBytes(byteData);
+              await characteristic.setNotifyValue(false);
               return zephyrData.field9; // Assuming field9 is the battery level
             }
           }
@@ -266,7 +267,7 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
                           MaterialPageRoute(
                             builder: (context) => DataCollection(
                               schoolName: widget.schoolName,
-                              studentName: widget.studentName,
+                              // studentName: widget.studentName,
                               grade: widget.grade,
                               exerciseName: widget.exerciseName,
                             ),

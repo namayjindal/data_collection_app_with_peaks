@@ -20,12 +20,12 @@ class DataCollection extends StatefulWidget {
     super.key,
     required this.schoolName,
     required this.grade,
-    required this.studentName,
+    // required this.studentName,
     required this.exerciseName,
   });
 
   final String schoolName;
-  final String studentName;
+  // final String studentName;
   final String exerciseName;
   final String grade;
 
@@ -129,6 +129,7 @@ class _DataCollectionState extends State<DataCollection> {
   bool isProcessingData = true;
   bool isFirstReading = true;
   bool shouldStopCollecting = false;
+  String studentName = '';
 
   @override
   void initState() {
@@ -221,7 +222,7 @@ class _DataCollectionState extends State<DataCollection> {
           .toString()
           .substring(0, DateTime.now().toString().length - 5);
       String fileName =
-          '${widget.studentName}-${widget.grade}-$reps-$label-$timestamp';
+          '$studentName-${widget.grade}-$reps-$label-$timestamp';
       Reference storageRef = FirebaseStorage.instance
           .ref('${widget.schoolName}/${widget.exerciseName}/$fileName.csv');
 
@@ -231,7 +232,7 @@ class _DataCollectionState extends State<DataCollection> {
           'additionalInfo': additionalInfo,
           'label': label,
           'reps': reps.toString(),
-          'studentName': widget.studentName,
+          'studentName': studentName,
           'grade': widget.grade,
           'exerciseName': widget.exerciseName,
         },
@@ -479,42 +480,53 @@ class _DataCollectionState extends State<DataCollection> {
           return AlertDialog(
             title: const Text('Enter Label and Information',
                 style: TextStyle(color: Colors.black)),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DropdownButtonFormField<String>(
-                  value: label,
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      label = newValue!;
-                    });
-                  },
-                  items: ['Good', 'Bad', 'Idle'].map((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                  decoration: const InputDecoration(labelText: 'Select Label'),
-                ),
-                TextFormField(
-                  keyboardType: TextInputType.number,
-                  onChanged: (String value) {
-                    setState(() {
-                      reps = int.tryParse(value) ?? 0;
-                    });
-                  },
-                  decoration:
-                      const InputDecoration(labelText: 'Number of Reps/Time'),
-                ),
-                TextFormField(
-                  onChanged: (String value) {
-                    additionalInfo = value;
-                  },
-                  decoration: const InputDecoration(
-                      labelText: 'Additional Information'),
-                ),
-              ],
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButtonFormField<String>(
+                    value: label,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        label = newValue!;
+                      });
+                    },
+                    items: ['Good', 'Bad', 'Idle'].map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    decoration: const InputDecoration(labelText: 'Select Label'),
+                  ),
+                  TextFormField(
+                    onChanged: (String value) {
+                      setState(() {
+                        studentName = value;
+                      });
+                    },
+                    decoration:
+                        const InputDecoration(labelText: 'Student Info'),
+                  ),
+                  TextFormField(
+                    keyboardType: TextInputType.number,
+                    onChanged: (String value) {
+                      setState(() {
+                        reps = int.tryParse(value) ?? 0;
+                      });
+                    },
+                    decoration:
+                        const InputDecoration(labelText: 'Number of Reps/Time'),
+                  ),
+                  TextFormField(
+                    onChanged: (String value) {
+                      additionalInfo = value;
+                    },
+                    decoration: const InputDecoration(
+                        labelText: 'Additional Information'),
+                  ),
+                ],
+              ),
             ),
             actions: <Widget>[
               TextButton(
@@ -600,6 +612,7 @@ class _DataCollectionState extends State<DataCollection> {
   Future<void> pauseCollection() async {
     elapsedTimer?.cancel();
     shouldStopCollecting = true; // Set flag to stop collecting data
+
     String additionalInfo = '';
 
     setState(() {
@@ -643,42 +656,53 @@ class _DataCollectionState extends State<DataCollection> {
           return AlertDialog(
             title: const Text('Enter Label and Information',
                 style: TextStyle(color: Colors.black)),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DropdownButtonFormField<String>(
-                  value: label,
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      label = newValue!;
-                    });
-                  },
-                  items: ['Good', 'Bad', 'Idle'].map((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                  decoration: const InputDecoration(labelText: 'Select Label'),
-                ),
-                TextFormField(
-                  keyboardType: TextInputType.number,
-                  onChanged: (String value) {
-                    setState(() {
-                      reps = int.tryParse(value) ?? 0;
-                    });
-                  },
-                  decoration:
-                      const InputDecoration(labelText: 'Number of Reps/Time'),
-                ),
-                TextFormField(
-                  onChanged: (String value) {
-                    additionalInfo = value;
-                  },
-                  decoration: const InputDecoration(
-                      labelText: 'Additional Information'),
-                ),
-              ],
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButtonFormField<String>(
+                    value: label,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        label = newValue!;
+                      });
+                    },
+                    items: ['Good', 'Bad', 'Idle'].map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    decoration: const InputDecoration(labelText: 'Select Label'),
+                  ),
+                  TextFormField(
+                    onChanged: (String value) {
+                      setState(() {
+                        studentName = value;
+                      });
+                    },
+                    decoration:
+                        const InputDecoration(labelText: 'Student Info'),
+                  ),
+                  TextFormField(
+                    keyboardType: TextInputType.number,
+                    onChanged: (String value) {
+                      setState(() {
+                        reps = int.tryParse(value) ?? 0;
+                      });
+                    },
+                    decoration:
+                        const InputDecoration(labelText: 'Number of Reps/Time'),
+                  ),
+                  TextFormField(
+                    onChanged: (String value) {
+                      additionalInfo = value;
+                    },
+                    decoration: const InputDecoration(
+                        labelText: 'Additional Information'),
+                  ),
+                ],
+              ),
             ),
             actions: <Widget>[
               TextButton(
@@ -781,49 +805,51 @@ class _DataCollectionState extends State<DataCollection> {
     return Scaffold(
       appBar: AppBar(title: const Text('Data')),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
-              onPressed: bandCallibration,
-              child: const Text(
-                'Band Calibration',
-                style: TextStyle(color: Colors.white),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
+                onPressed: bandCallibration,
+                child: const Text(
+                  'Band Calibration',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
-              onPressed: isCollecting ? null : getData,
-              child: const Text(
-                'Get Data',
-                style: TextStyle(color: Colors.white),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
+                onPressed: isCollecting ? null : getData,
+                child: const Text(
+                  'Get Data',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            Text('Elapsed Time: $elapsedTime seconds'),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
-              onPressed: isCollecting ? stopCollection : null,
-              child: const Text(
-                'Stop Collection',
-                style: TextStyle(color: Colors.white),
+              const SizedBox(height: 20),
+              Text('Elapsed Time: $elapsedTime seconds'),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
+                onPressed: isCollecting
+                    ? (isPaused ? resumeCollection : pauseCollection)
+                    : null,
+                child: Text(
+                  isPaused ? 'Resume' : 'Next',
+                  style: const TextStyle(color: Colors.white),
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
-              onPressed: isCollecting
-                  ? (isPaused ? resumeCollection : pauseCollection)
-                  : null,
-              child: Text(
-                isPaused ? 'Resume' : 'Pause',
-                style: const TextStyle(color: Colors.white),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
+                onPressed: isCollecting ? stopCollection : null,
+                child: const Text(
+                  'Stop Collection',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
