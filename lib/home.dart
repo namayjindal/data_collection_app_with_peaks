@@ -86,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
       "Stand on one leg (non-dominant)",
       "Hop 9 metres (dominant)",
       "Hop 9 metres (non-dominant)",
-      "Criss Cross with Clap",
+      "Forward Backward Spread Legs and Back",
       "Dribbling in Fig - 8"
     ],
   };
