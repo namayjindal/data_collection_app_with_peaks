@@ -174,7 +174,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bluetooth Demo'),
+        title: const Text('Data Collection'),
       ),
       body: Padding(
         padding: EdgeInsets.symmetric(
