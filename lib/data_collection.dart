@@ -572,11 +572,6 @@ class _DataCollectionState extends State<DataCollection> {
         String path = await generateCsvFile(csvData);
         await uploadFileToFirebase(path, additionalInfo);
 
-        List<BluetoothDevice> devices = FlutterBluePlus.connectedDevices;
-        for (var device in devices) {
-          dev.log("Disconnecting from ${device.name}");
-          await device.disconnect();
-        }
       }
     }
 
@@ -584,6 +579,7 @@ class _DataCollectionState extends State<DataCollection> {
       sensorData.clear();
       csvData.clear();
       elapsedTime = 0;
+      isCollecting = false;
     });
   }
 
@@ -667,7 +663,7 @@ class _DataCollectionState extends State<DataCollection> {
               const SizedBox(height: 20),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
-                onPressed: isCollecting ? null : disconnectAndNavigate,
+                onPressed: isCollecting ? stopCollection : null,
                 child: const Text(
                   'Stop Collection',
                   style: TextStyle(color: Colors.white),
@@ -676,7 +672,7 @@ class _DataCollectionState extends State<DataCollection> {
               const SizedBox(height: 20),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
-                onPressed: isCollecting ? stopCollection : null,
+                onPressed: isCollecting ? null : disconnectAndNavigate,
                 child: const Text(
                   'Go to Home',
                   style: TextStyle(color: Colors.white),
