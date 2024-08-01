@@ -124,7 +124,6 @@ class _DataCollectionState extends State<DataCollection> {
   String gender = 'Male';
   int reps = 0;
   bool isCollecting = false;
-  bool isPaused = false;
   bool isProcessingData = true;
   bool isFirstReading = true;
   String studentName = '';
@@ -159,7 +158,7 @@ class _DataCollectionState extends State<DataCollection> {
     for (BluetoothDevice device in connectedDevices) {
       // Find the matching sensor prefix for the connected device
       var matchingSensor = sensorPrefixes.firstWhere(
-        (sensor) => device.name.contains(sensor['name']!),
+        (sensor) => device.platformName.contains(sensor['name']!),
         orElse: () => {'name': '', 'prefix': ''},
       );
 
@@ -219,8 +218,7 @@ class _DataCollectionState extends State<DataCollection> {
       final timestamp = DateTime.now()
           .toString()
           .substring(0, DateTime.now().toString().length - 5);
-      String fileName =
-          '$studentName-${widget.grade}-$reps-$label-$timestamp';
+      String fileName = '$studentName-${widget.grade}-$reps-$label-$timestamp';
       Reference storageRef = FirebaseStorage.instance
           .ref('${widget.schoolName}/${widget.exerciseName}/$fileName.csv');
 
@@ -231,7 +229,7 @@ class _DataCollectionState extends State<DataCollection> {
           'label': label,
           'reps': reps.toString(),
           'studentName': studentName,
-          'gender':gender,
+          'gender': gender,
           'grade': widget.grade,
           'exerciseName': widget.exerciseName,
         },
@@ -274,7 +272,6 @@ class _DataCollectionState extends State<DataCollection> {
       csvData.clear();
       sensorData.clear();
       isCollecting = true;
-      isPaused = false;
       isFirstReading = true;
       isProcessingData = true; // Start processing data again
     });
@@ -294,7 +291,7 @@ class _DataCollectionState extends State<DataCollection> {
       var device = devices[i];
 
       // Log the name of the connected device
-      dev.log('Connected to: ${device.name}');
+      dev.log('Connected to: ${device.platformName}');
 
       var services = await device.discoverServices();
       for (var service in services) {
@@ -483,7 +480,6 @@ class _DataCollectionState extends State<DataCollection> {
       bool? ok = await showDialog<bool>(
         context: context,
         builder: (BuildContext context) {
-          // String additionalInfo = ''; // New variable to store additional info
           return AlertDialog(
             title: const Text('Enter Label and Information',
                 style: TextStyle(color: Colors.black)),
@@ -504,7 +500,8 @@ class _DataCollectionState extends State<DataCollection> {
                         child: Text(value),
                       );
                     }).toList(),
-                    decoration: const InputDecoration(labelText: 'Select Label'),
+                    decoration:
+                        const InputDecoration(labelText: 'Select Label'),
                   ),
                   DropdownButtonFormField<String>(
                     value: gender,
@@ -519,7 +516,8 @@ class _DataCollectionState extends State<DataCollection> {
                         child: Text(value),
                       );
                     }).toList(),
-                    decoration: const InputDecoration(labelText: 'Select Gender'),
+                    decoration:
+                        const InputDecoration(labelText: 'Select Gender'),
                   ),
                   TextFormField(
                     onChanged: (String value) {
@@ -582,18 +580,11 @@ class _DataCollectionState extends State<DataCollection> {
       }
     }
 
-    // for (var queue in sensorData.data.values) {
-    //   for (var v in queue) {
-    //     log(v.toString());
-    //   }
-    // }
-
-    sensorData.clear();
-    csvData.clear();
-    Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-        (route) => false);
+    setState(() {
+      sensorData.clear();
+      csvData.clear();
+      elapsedTime = 0;
+    });
   }
 
   void bandCallibration() async {
@@ -632,145 +623,17 @@ class _DataCollectionState extends State<DataCollection> {
     );
   }
 
-  Future<void> pauseCollection() async {
-    elapsedTimer?.cancel();
-
-    String additionalInfo = '';
-
-    setState(() {
-      isPaused = true;
-      isCollecting = true; // Keep isCollecting true so we can resume later
-      isProcessingData = false; // Immediately stop processing new data
-    });
-
-    for (var characteristic in characteristics) {
-      if (characteristic != null) {
-        dev.log("Setting notify value to false");
-        await characteristic.setNotifyValue(false);
-      }
+  void disconnectAndNavigate() async {
+    List<BluetoothDevice> devices = FlutterBluePlus.connectedDevices;
+    for (var device in devices) {
+      await device.disconnect();
     }
 
-    bool? saveData = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Save Data', style: TextStyle(color: Colors.black)),
-          content: const Text('Do you want to save the collected data?',
-              style: TextStyle(color: Colors.black)),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('No'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Yes'),
-            ),
-          ],
-        );
-      },
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const HomeScreen()),
+      (route) => false,
     );
-
-    if (saveData == true) {
-      bool? ok = await showDialog<bool>(
-        context: context,
-        builder: (BuildContext context) {
-          // String additionalInfo = ''; // New variable to store additional info
-          return AlertDialog(
-            title: const Text('Enter Label and Information',
-                style: TextStyle(color: Colors.black)),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DropdownButtonFormField<String>(
-                    value: label,
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        label = newValue!;
-                      });
-                    },
-                    items: ['Good', 'Bad', 'Idle'].map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                    decoration: const InputDecoration(labelText: 'Select Label'),
-                  ),
-                  TextFormField(
-                    onChanged: (String value) {
-                      setState(() {
-                        studentName = value;
-                      });
-                    },
-                    decoration:
-                        const InputDecoration(labelText: 'Student Info'),
-                  ),
-                  DropdownButtonFormField<String>(
-                    value: gender,
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        gender = newValue!;
-                      });
-                    },
-                    items: ['Male', 'Female'].map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                    decoration: const InputDecoration(labelText: 'Select Gender'),
-                  ),
-                  TextFormField(
-                    keyboardType: TextInputType.number,
-                    onChanged: (String value) {
-                      setState(() {
-                        reps = int.tryParse(value) ?? 0;
-                      });
-                    },
-                    decoration:
-                        const InputDecoration(labelText: 'Number of Reps/Time'),
-                  ),
-                  TextFormField(
-                    onChanged: (String value) {
-                      additionalInfo = value;
-                    },
-                    decoration: const InputDecoration(
-                        labelText: 'Additional Information'),
-                  ),
-                ],
-              ),
-            ),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
-
-      if (ok == true) {
-        while (sensorData.data.values.any((queue) => queue.isNotEmpty)) {
-          var row = organizeDataRow();
-          csvData.add(row);
-          // Remove the processed data from sensorData
-          for (var queue in sensorData.data.values) {
-            if (queue.isNotEmpty) {
-              queue.removeFirst();
-            }
-          }
-        }
-        String path = await generateCsvFile(csvData);
-        await uploadFileToFirebase(path, additionalInfo);
-
-      }
-    }
-
-    // Clear the data after saving
-    csvData.clear();
   }
 
   @override
@@ -804,12 +667,10 @@ class _DataCollectionState extends State<DataCollection> {
               const SizedBox(height: 20),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
-                onPressed: isCollecting
-                    ? (isPaused ? getData : pauseCollection)
-                    : null,
-                child: Text(
-                  isPaused ? 'Resume' : 'Stop',
-                  style: const TextStyle(color: Colors.white),
+                onPressed: isCollecting ? null : disconnectAndNavigate,
+                child: const Text(
+                  'Stop Collection',
+                  style: TextStyle(color: Colors.white),
                 ),
               ),
               const SizedBox(height: 20),
@@ -817,7 +678,7 @@ class _DataCollectionState extends State<DataCollection> {
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
                 onPressed: isCollecting ? stopCollection : null,
                 child: const Text(
-                  'Stop and Go to Home',
+                  'Go to Home',
                   style: TextStyle(color: Colors.white),
                 ),
               ),
