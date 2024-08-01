@@ -20,7 +20,6 @@ class DataCollection extends StatefulWidget {
     super.key,
     required this.schoolName,
     required this.grade,
-    // required this.studentName,
     required this.exerciseName,
   });
 
@@ -767,113 +766,12 @@ class _DataCollectionState extends State<DataCollection> {
         String path = await generateCsvFile(csvData);
         await uploadFileToFirebase(path, additionalInfo);
 
-        // Show a success dialog instead of navigating away
-        await showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text('Upload Success'),
-              content:
-                  const Text('Data has been successfully saved and uploaded.'),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('OK'),
-                ),
-              ],
-            );
-          },
-        );
       }
     }
 
     // Clear the data after saving
     csvData.clear();
   }
-
-  // Future<void> resumeCollection() async {
-  //   setState(() {
-  //     elapsedTime = 0;
-  //     csvData.clear();
-  //     sensorData.clear();
-  //     isCollecting = true;
-  //     isPaused = false;
-  //     isFirstReading = true; // Reset the first reading flag
-  //     isProcessingData = true; // Start processing data again
-  //   });
-
-  //   List<BluetoothDevice> devices = FlutterBluePlus.connectedDevices;
-  //   setState(() {
-  //     deviceCount = devices.length.clamp(1, 5);
-  //   });
-
-  //   for (int i = 0; i < deviceCount; i++) {
-  //     var device = devices[i];
-
-  //     // Log the name of the connected device
-  //     dev.log('Connected to: ${device.name}');
-
-  //     var services = await device.discoverServices();
-  //     for (var service in services) {
-  //       for (var characteristic in service.characteristics) {
-  //         if (characteristic.properties.write) {
-  //           characteristic.write([0]);
-  //           dev.log('Wrote to sensor $i');
-  //         }
-  //       }
-  //     }
-
-  //     for (var service in services) {
-  //       for (var characteristic in service.characteristics) {
-  //         if (characteristic.properties.notify) {
-  //           setState(() {
-  //             characteristics[i] = characteristic;
-  //           });
-  //           break;
-  //         }
-  //       }
-  //     }
-
-  //     if (characteristics[i] != null) {
-  //       await characteristics[i]!.setNotifyValue(true);
-  //       characteristics[i]!.lastValueStream.listen((value) {
-  //         processData(value, i);
-  //       });
-  //     }
-
-  //     elapsedTimer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
-  //     setState(() {
-  //       elapsedTime++;
-  //     });
-  //   });
-
-  //     device.connectionState.listen((BluetoothConnectionState state) {
-  //       if (state == BluetoothConnectionState.disconnected) {
-  //         showDialog(
-  //           context: context,
-  //           builder: (BuildContext context) {
-  //             return AlertDialog(
-  //               title: Text('${device.platformName} Disconnected'),
-  //               content: const Text(
-  //                 'Restart data collection',
-  //                 style: TextStyle(color: Colors.black),
-  //               ),
-  //               actions: <Widget>[
-  //                 TextButton(
-  //                   child: const Text('Restart'),
-  //                   onPressed: () {
-  //                     Navigator.of(context).pop();
-  //                     restartDataCollection();
-  //                   },
-  //                 ),
-  //               ],
-  //             );
-  //           },
-  //         );
-  //       }
-  //     });
-  //   }
-  // }
 
   @override
   Widget build(BuildContext context) {
