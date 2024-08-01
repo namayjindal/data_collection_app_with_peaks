@@ -128,7 +128,6 @@ class _DataCollectionState extends State<DataCollection> {
   bool isPaused = false;
   bool isProcessingData = true;
   bool isFirstReading = true;
-  bool shouldStopCollecting = false;
   String studentName = '';
 
   @override
@@ -277,17 +276,19 @@ class _DataCollectionState extends State<DataCollection> {
       sensorData.clear();
       isCollecting = true;
       isPaused = false;
+      isFirstReading = true;
+      isProcessingData = true; // Start processing data again
+    });
+
+    List<BluetoothDevice> devices = FlutterBluePlus.connectedDevices;
+    setState(() {
+      deviceCount = devices.length.clamp(1, 5);
     });
 
     elapsedTimer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
       setState(() {
         elapsedTime++;
       });
-    });
-
-    List<BluetoothDevice> devices = FlutterBluePlus.connectedDevices;
-    setState(() {
-      deviceCount = devices.length.clamp(1, 5);
     });
 
     for (int i = 0; i < deviceCount; i++) {
@@ -300,12 +301,8 @@ class _DataCollectionState extends State<DataCollection> {
       for (var service in services) {
         for (var characteristic in service.characteristics) {
           if (characteristic.properties.write) {
-            // int refTime = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-            // ByteData byteData = ByteData(4);
-            // byteData.setUint32(0, refTime, Endian.little);
-            // Uint8List referenceData = byteData.buffer.asUint8List();
             characteristic.write([0]);
-            dev.log('wrote');
+            dev.log('Wrote to sensor $i');
           }
         }
       }
@@ -322,8 +319,10 @@ class _DataCollectionState extends State<DataCollection> {
       }
 
       if (characteristics[i] != null) {
+        dev.log("Setting notify value to true");
         await characteristics[i]!.setNotifyValue(true);
         characteristics[i]!.lastValueStream.listen((value) {
+          dev.log("Processing data for sensor $i");
           processData(value, i);
         });
       }
@@ -357,8 +356,7 @@ class _DataCollectionState extends State<DataCollection> {
   }
 
   void processData(List<int> value, int sensorIndex) {
-    if (!isProcessingData || shouldStopCollecting)
-      return; // Skip processing if paused or stopped
+    if (!isProcessingData) return;
 
     var v = Uint8List.fromList(value);
     ByteData byteData = ByteData.sublistView(v);
@@ -381,8 +379,18 @@ class _DataCollectionState extends State<DataCollection> {
           }
           isFirstReading = false; // Mark that we've processed the first reading
 
-          sensorData.addData(sensorIndex, zephyrData);
-          dev.log(zephyrData.toString());
+          // Check if this data point already exists
+          bool dataExists = sensorData.data[sensorIndex]?.any((data) =>
+                  data.field1 == zephyrData.field1 &&
+                  data.field2 == zephyrData.field2) ??
+              false;
+
+          if (!dataExists) {
+            sensorData.addData(sensorIndex, zephyrData);
+            dev.log(zephyrData.toString());
+          } else {
+            dev.log('Skipping duplicate data point');
+          }
         } catch (e) {
           dev.log('Error processing data: $e');
         }
@@ -443,7 +451,6 @@ class _DataCollectionState extends State<DataCollection> {
 
   Future<void> stopCollection() async {
     elapsedTimer?.cancel();
-    shouldStopCollecting = true; // Set flag to stop collecting data
     String additionalInfo = '';
 
     for (var characteristic in characteristics) {
@@ -570,6 +577,7 @@ class _DataCollectionState extends State<DataCollection> {
 
         List<BluetoothDevice> devices = FlutterBluePlus.connectedDevices;
         for (var device in devices) {
+          dev.log("Disconnecting from ${device.name}");
           await device.disconnect();
         }
       }
@@ -627,7 +635,6 @@ class _DataCollectionState extends State<DataCollection> {
 
   Future<void> pauseCollection() async {
     elapsedTimer?.cancel();
-    shouldStopCollecting = true; // Set flag to stop collecting data
 
     String additionalInfo = '';
 
@@ -637,11 +644,12 @@ class _DataCollectionState extends State<DataCollection> {
       isProcessingData = false; // Immediately stop processing new data
     });
 
-    // for (var characteristic in characteristics) {
-    //   if (characteristic != null) {
-    //     await characteristic.setNotifyValue(false);
-    //   }
-    // }
+    for (var characteristic in characteristics) {
+      if (characteristic != null) {
+        dev.log("Setting notify value to false");
+        await characteristic.setNotifyValue(false);
+      }
+    }
 
     bool? saveData = await showDialog<bool>(
       context: context,
@@ -783,53 +791,89 @@ class _DataCollectionState extends State<DataCollection> {
     csvData.clear();
   }
 
-  Future<void> resumeCollection() async {
-    setState(() {
-      elapsedTime = 0;
-      csvData.clear();
-      sensorData.clear();
-      isPaused = false;
-      isFirstReading = true; // Reset the first reading flag
-      shouldStopCollecting = false; // Reset the stop collecting flag
-    });
+  // Future<void> resumeCollection() async {
+  //   setState(() {
+  //     elapsedTime = 0;
+  //     csvData.clear();
+  //     sensorData.clear();
+  //     isCollecting = true;
+  //     isPaused = false;
+  //     isFirstReading = true; // Reset the first reading flag
+  //     isProcessingData = true; // Start processing data again
+  //   });
 
-    List<BluetoothDevice> devices = FlutterBluePlus.connectedDevices;
+  //   List<BluetoothDevice> devices = FlutterBluePlus.connectedDevices;
+  //   setState(() {
+  //     deviceCount = devices.length.clamp(1, 5);
+  //   });
 
-    // Immediately write to all sensors
-    for (int i = 0; i < deviceCount; i++) {
-      var device = devices[i];
-      var services = await device.discoverServices();
-      for (var service in services) {
-        for (var characteristic in service.characteristics) {
-          if (characteristic.properties.write) {
-            await characteristic.write([0]);
-            dev.log('Wrote to sensor $i');
-          }
-        }
-      }
-    }
+  //   for (int i = 0; i < deviceCount; i++) {
+  //     var device = devices[i];
 
-    // Set up data collection streams
-    for (int i = 0; i < deviceCount; i++) {
-      if (characteristics[i] != null) {
-        await characteristics[i]!.setNotifyValue(true);
-        characteristics[i]!.lastValueStream.listen((value) {
-          processData(value, i);
-        });
-      }
-    }
+  //     // Log the name of the connected device
+  //     dev.log('Connected to: ${device.name}');
 
-    // Start the timer and enable data processing
-    elapsedTimer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
-      setState(() {
-        elapsedTime++;
-      });
-    });
+  //     var services = await device.discoverServices();
+  //     for (var service in services) {
+  //       for (var characteristic in service.characteristics) {
+  //         if (characteristic.properties.write) {
+  //           characteristic.write([0]);
+  //           dev.log('Wrote to sensor $i');
+  //         }
+  //       }
+  //     }
 
-    setState(() {
-      isProcessingData = true; // Start processing data again
-    });
-  }
+  //     for (var service in services) {
+  //       for (var characteristic in service.characteristics) {
+  //         if (characteristic.properties.notify) {
+  //           setState(() {
+  //             characteristics[i] = characteristic;
+  //           });
+  //           break;
+  //         }
+  //       }
+  //     }
+
+  //     if (characteristics[i] != null) {
+  //       await characteristics[i]!.setNotifyValue(true);
+  //       characteristics[i]!.lastValueStream.listen((value) {
+  //         processData(value, i);
+  //       });
+  //     }
+
+  //     elapsedTimer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
+  //     setState(() {
+  //       elapsedTime++;
+  //     });
+  //   });
+
+  //     device.connectionState.listen((BluetoothConnectionState state) {
+  //       if (state == BluetoothConnectionState.disconnected) {
+  //         showDialog(
+  //           context: context,
+  //           builder: (BuildContext context) {
+  //             return AlertDialog(
+  //               title: Text('${device.platformName} Disconnected'),
+  //               content: const Text(
+  //                 'Restart data collection',
+  //                 style: TextStyle(color: Colors.black),
+  //               ),
+  //               actions: <Widget>[
+  //                 TextButton(
+  //                   child: const Text('Restart'),
+  //                   onPressed: () {
+  //                     Navigator.of(context).pop();
+  //                     restartDataCollection();
+  //                   },
+  //                 ),
+  //               ],
+  //             );
+  //           },
+  //         );
+  //       }
+  //     });
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -863,7 +907,7 @@ class _DataCollectionState extends State<DataCollection> {
               ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
                 onPressed: isCollecting
-                    ? (isPaused ? resumeCollection : pauseCollection)
+                    ? (isPaused ? getData : pauseCollection)
                     : null,
                 child: Text(
                   isPaused ? 'Resume' : 'Stop',
