@@ -12,7 +12,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _schoolNameController = TextEditingController();
   // final TextEditingController _studentNameController = TextEditingController();
-  String gender = 'Male';
   String grade = 'Nursery';
   final List<String> genders = ['Male', 'Female'];
 
@@ -149,7 +148,6 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (context) => BluetoothScreen(
           sensors: exercises[exercise] ?? [],
           schoolName: _schoolNameController.text,
-          // studentName: _studentNameController.text,
           grade: grade,
           exerciseName: exercise,
           allowedDeviceNames: const [
@@ -193,15 +191,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 decoration: const InputDecoration(label: Text('School Name')),
               ),
-              // SizedBox(height: screenHeight * 0.07),
-              // TextField(
-              //   controller: _studentNameController,
-              //   style: TextStyle(
-              //     color: Colors.black,
-              //     fontSize: fontsize,
-              //   ),
-              //   decoration: const InputDecoration(label: Text('Student Name')),
-              // ),
               SizedBox(height: screenHeight * 0.07),
               Text(
                 'Grade',
@@ -223,29 +212,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   setState(() {
                     grade = newValue!;
                     exercise = gradeExercises[grade]![0];
-                  });
-                },
-              ),
-              SizedBox(height: screenHeight * 0.07),
-              Text(
-                'Gender',
-                style: TextStyle(color: Colors.black, fontSize: fontsize),
-              ),
-              SizedBox(height: screenHeight * 0.01),
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(
-                  hintText: 'Gender',
-                ),
-                value: gender,
-                items: genders.map((gender) {
-                  return DropdownMenuItem<String>(
-                    value: gender,
-                    child: Text(gender),
-                  );
-                }).toList(),
-                onChanged: (newValue) {
-                  setState(() {
-                    gender = newValue!;
                   });
                 },
               ),

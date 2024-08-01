@@ -147,6 +147,9 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
               var byteData = ByteData.sublistView(Uint8List.fromList(value));
               var zephyrData = ZephyrData.fromBytes(byteData);
               await characteristic.setNotifyValue(false);
+              if (zephyrData.field9 > 100) {
+                return 100;
+              }
               return zephyrData.field9; // Assuming field9 is the battery level
             }
           }

@@ -25,7 +25,6 @@ class DataCollection extends StatefulWidget {
   });
 
   final String schoolName;
-  // final String studentName;
   final String exerciseName;
   final String grade;
 
@@ -123,6 +122,7 @@ class _DataCollectionState extends State<DataCollection> {
   int elapsedTime = 0;
   int deviceCount = 0;
   String label = 'Good';
+  String gender = 'Male';
   int reps = 0;
   bool isCollecting = false;
   bool isPaused = false;
@@ -233,6 +233,7 @@ class _DataCollectionState extends State<DataCollection> {
           'label': label,
           'reps': reps.toString(),
           'studentName': studentName,
+          'gender':gender,
           'grade': widget.grade,
           'exerciseName': widget.exerciseName,
         },
@@ -499,6 +500,21 @@ class _DataCollectionState extends State<DataCollection> {
                     }).toList(),
                     decoration: const InputDecoration(labelText: 'Select Label'),
                   ),
+                  DropdownButtonFormField<String>(
+                    value: gender,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        gender = newValue!;
+                      });
+                    },
+                    items: ['Male', 'Female'].map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    decoration: const InputDecoration(labelText: 'Select Gender'),
+                  ),
                   TextFormField(
                     onChanged: (String value) {
                       setState(() {
@@ -684,6 +700,21 @@ class _DataCollectionState extends State<DataCollection> {
                     decoration:
                         const InputDecoration(labelText: 'Student Info'),
                   ),
+                  DropdownButtonFormField<String>(
+                    value: gender,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        gender = newValue!;
+                      });
+                    },
+                    items: ['Male', 'Female'].map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    decoration: const InputDecoration(labelText: 'Select Gender'),
+                  ),
                   TextFormField(
                     keyboardType: TextInputType.number,
                     onChanged: (String value) {
@@ -835,7 +866,7 @@ class _DataCollectionState extends State<DataCollection> {
                     ? (isPaused ? resumeCollection : pauseCollection)
                     : null,
                 child: Text(
-                  isPaused ? 'Resume' : 'Next',
+                  isPaused ? 'Resume' : 'Stop',
                   style: const TextStyle(color: Colors.white),
                 ),
               ),
@@ -844,7 +875,7 @@ class _DataCollectionState extends State<DataCollection> {
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
                 onPressed: isCollecting ? stopCollection : null,
                 child: const Text(
-                  'Stop Collection',
+                  'Stop and Go to Home',
                   style: TextStyle(color: Colors.white),
                 ),
               ),
