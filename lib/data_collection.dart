@@ -367,7 +367,7 @@ class _DataCollectionState extends State<DataCollection> {
             byteData.buffer.asByteData(start, ZephyrData.expectedLength);
         try {
           var zephyrData = ZephyrData.fromBytes(sensorDataByteData);
-
+           dev.log(zephyrData.toString());
           // Check if it's the first reading and the index is greater than 10
           if (isFirstReading && zephyrData.field2 > 10) {
             dev.log('Discarding first reading with index > 10');
@@ -438,6 +438,11 @@ class _DataCollectionState extends State<DataCollection> {
     // await device.connect();
 
     // getData();
+
+    List<BluetoothDevice> devices = FlutterBluePlus.connectedDevices;
+    for (var device in devices) {
+      await device.disconnect();
+    }
 
     Navigator.pushAndRemoveUntil(
         context,
