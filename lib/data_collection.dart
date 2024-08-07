@@ -20,11 +20,11 @@ class DataCollection extends StatefulWidget {
     super.key,
     required this.schoolName,
     required this.grade,
-    required this.exerciseName,
+    required this.studentName,
   });
 
   final String schoolName;
-  final String exerciseName;
+  final String studentName;
   final String grade;
 
   @override
@@ -126,13 +126,16 @@ class _DataCollectionState extends State<DataCollection> {
   bool isCollecting = false;
   bool isProcessingData = true;
   bool isFirstReading = true;
-  String studentName = '';
+  //String studentName = '';
+  String exerciseName = 'namay';
 
   @override
   void initState() {
     super.initState();
     sensorData = SensorData(List.generate(
         FlutterBluePlus.connectedDevices.length, (index) => index));
+
+    loadExercises();
   }
 
   // Add this list of sensor names and prefixes
@@ -144,6 +147,100 @@ class _DataCollectionState extends State<DataCollection> {
     {'name': 'Sense Ball', 'prefix': 'ball_'},
   ];
 
+  final Map<String, List> gradeExercises = {
+    'Nursery': [
+      "Step Down from Height (dominant)",
+      "Step Down from Height (non-dominant)",
+      "Step over an obstacle (dominant)",
+      "Step over an obstacle (non-dominant)",
+      "Jump symmetrically",
+      "Hit Balloon Up"
+    ],
+    'LKG': [
+      "Stand on one leg (dominant)",
+      "Step over an obstacle (non-dominant)",
+      "Hop forward on one leg (dominant)",
+      "Hop forward on one leg (non-dominant)",
+      "Jumping Jack without Clap",
+      "Hit Balloon Up"
+    ],
+    'SKG': [
+      "Stand on one leg (dominant)",
+      "Stand on one leg (non-dominant)",
+      "Hop forward on one leg (dominant)",
+      "Hop forward on one leg (non-dominant)",
+      "Jumping Jack without Clap",
+      "Hit Balloon Up"
+    ],
+    'Grade 1': [
+      "Stand on one leg (dominant)",
+      "Stand on one leg (non-dominant)",
+      "Hop 9 metres (dominant)",
+      "Hop forward on one leg (non-dominant)",
+      "Skipping",
+      "Ball Bounce and Catch"
+    ],
+    'Grade 2': [
+      "Stand on one leg (dominant)",
+      "Stand on one leg (non-dominant)",
+      "Hop 9 metres (dominant)",
+      "Hop forward on one leg (non-dominant)",
+      "Criss Cross with leg forward",
+      "Ball Bounce and Catch"
+    ],
+    'Grade 3': [
+      "Stand on one leg (dominant)",
+      "Stand on one leg (non-dominant)",
+      "Hop 9 metres (dominant)",
+      "Hop 9 metres (non-dominant)",
+      "Criss Cross with leg forward",
+      "Dribbling in Fig - O"
+    ],
+    'Grade 4': [
+      "Stand on one leg (dominant)",
+      "Stand on one leg (non-dominant)",
+      "Hop 9 metres (dominant)",
+      "Hop 9 metres (non-dominant)",
+      "Criss Cross with leg forward",
+      "Dribbling in Fig - O"
+    ],
+    'Grade 5': [
+      "Stand on one leg (dominant)",
+      "Stand on one leg (non-dominant)",
+      "Hop 9 metres (dominant)",
+      "Hop 9 metres (non-dominant)",
+      "Criss Cross with Clap",
+      "Dribbling in Fig - 8"
+    ],
+    'Grade 6': [
+      "Stand on one leg (dominant)",
+      "Stand on one leg (non-dominant)",
+      "Hop 9 metres (dominant)",
+      "Hop 9 metres (non-dominant)",
+      "Forward Backward Spread Legs and Back",
+      "Dribbling in Fig - 8"
+    ],
+  };
+
+  List<dynamic> exercises = [
+    "Stand on one leg (dominant)",
+    "Stand on one leg (non-dominant)",
+    "Hop 9 metres (dominant)",
+    "Hop 9 metres (non-dominant)",
+    "Criss Cross with leg forward",
+    "Dribbling in Fig - O"
+  ];
+
+  void loadExercises() {
+    exercises = gradeExercises[widget.grade] ?? [];
+    if (exercises.isNotEmpty) {
+      // Set exerciseName to the first exercise in the list for this grade
+      exerciseName = exercises[0];
+    } else {
+      // If there are no exercises for this grade, set exerciseName to an empty string or null
+      exerciseName = '';
+    }
+  }
   List<String> getConnectedSensorPrefixes() {
     return sensorPrefixes
         .sublist(0, deviceCount)
@@ -218,19 +315,19 @@ class _DataCollectionState extends State<DataCollection> {
     );
 
     final timestamp = DateTime.now().toString().replaceAll(RegExp(r'[^0-9]'), '');
-    String fileName = '$studentName-${widget.grade}-$reps-$label-$timestamp.csv';
+    String fileName = '$exerciseName-${widget.grade}-${widget.studentName}-$reps-$label-$timestamp.csv';
     Reference storageRef = FirebaseStorage.instance
-        .ref('${widget.schoolName}/${widget.exerciseName}/$fileName');
+        .ref('${widget.schoolName}/$exerciseName/$fileName');
 
     SettableMetadata metadata = SettableMetadata(
       customMetadata: {
         'additionalInfo': additionalInfo,
         'label': label,
         'reps': reps.toString(),
-        'studentName': studentName,
+        'studentName': widget.studentName,
         'gender': gender,
         'grade': widget.grade,
-        'exerciseName': widget.exerciseName,
+        'exerciseName': exerciseName,
       },
     );
 
@@ -497,112 +594,122 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
   }
 
   Future<void> stopCollection() async {
-    elapsedTimer?.cancel();
-    String additionalInfo = '';
+  elapsedTimer?.cancel();
+  String additionalInfo = '';
+  // String exercise = '';
 
-    for (var characteristic in characteristics) {
-      if (characteristic != null) {
-        await characteristic.setNotifyValue(false);
-      }
+  for (var characteristic in characteristics) {
+    if (characteristic != null) {
+      await characteristic.setNotifyValue(false);
     }
+  }
 
-    bool? saveData = await showDialog<bool>(
+  bool? saveData = await showDialog<bool>(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Save Data', style: TextStyle(color: Colors.black)),
+        content: const Text('Do you want to save the collected data?',
+            style: TextStyle(color: Colors.black)),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('No'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Yes'),
+          ),
+        ],
+      );
+    },
+  );
+
+  if (saveData == true) {
+    bool? ok = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Save Data', style: TextStyle(color: Colors.black)),
-          content: const Text('Do you want to save the collected data?',
+          title: const Text('Enter Label and Information',
               style: TextStyle(color: Colors.black)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  value: label,
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      label = newValue!;
+                    });
+                  },
+                  items: ['Good', 'Bad', 'Idle'].map((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  decoration: const InputDecoration(labelText: 'Select Label'),
+                ),
+                DropdownButtonFormField<String>(
+                  value: gender,
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      gender = newValue!;
+                    });
+                  },
+                  items: ['Male', 'Female'].map((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  decoration: const InputDecoration(labelText: 'Select Gender'),
+                ),
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(
+                    hintText: 'Select Exercise',
+                  ),
+                  value: exercises.contains(exerciseName) ? exerciseName : null,
+                  items: exercises.map((exercise) {
+                    return DropdownMenuItem<String>(
+                      value: exercise,
+                      child: Text(exercise),
+                    );
+                  }).toList(),
+                  onChanged: (newValue) {
+                    setState(() {
+                      exerciseName = newValue!;
+                    });
+                  },
+                ),
+                TextFormField(
+                  keyboardType: TextInputType.number,
+                  onChanged: (String value) {
+                    setState(() {
+                      reps = int.tryParse(value) ?? 0;
+                    });
+                  },
+                  decoration: const InputDecoration(labelText: 'Number of Reps/Time'),
+                ),
+                TextFormField(
+                  onChanged: (String value) {
+                    additionalInfo = value;
+                  },
+                  decoration: const InputDecoration(labelText: 'Additional Information'),
+                ),
+              ],
+            ),
+          ),
           actions: <Widget>[
             TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('No'),
-            ),
-            TextButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Yes'),
+              child: const Text('OK'),
             ),
           ],
         );
       },
     );
-
-    if (saveData == true) {
-      bool? ok = await showDialog<bool>(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Enter Label and Information',
-                style: TextStyle(color: Colors.black)),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DropdownButtonFormField<String>(
-                    value: label,
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        label = newValue!;
-                      });
-                    },
-                    items: ['Good', 'Bad', 'Idle'].map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                    decoration: const InputDecoration(labelText: 'Select Label'),
-                  ),
-                  DropdownButtonFormField<String>(
-                    value: gender,
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        gender = newValue!;
-                      });
-                    },
-                    items: ['Male', 'Female'].map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                    decoration: const InputDecoration(labelText: 'Select Gender'),
-                  ),
-                  TextFormField(
-                    onChanged: (String value) {
-                      setState(() {
-                        studentName = value;
-                      });
-                    },
-                    decoration: const InputDecoration(labelText: 'Student Info'),
-                  ),
-                  TextFormField(
-                    keyboardType: TextInputType.number,
-                    onChanged: (String value) {
-                      setState(() {
-                        reps = int.tryParse(value) ?? 0;
-                      });
-                    },
-                    decoration: const InputDecoration(labelText: 'Number of Reps/Time'),
-                  ),
-                  TextFormField(
-                    onChanged: (String value) {
-                      additionalInfo = value;
-                    },
-                    decoration: const InputDecoration(labelText: 'Additional Information'),
-                  ),
-                ],
-              ),
-            ),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
 
       if (ok == true) {
         while (sensorData.data.values.any((queue) => queue.isNotEmpty)) {
@@ -617,52 +724,44 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
         
         String csvString = const ListToCsvConverter().convert(csvData);
     
-    final timestamp = DateTime.now().toString().replaceAll(RegExp(r'[^0-9]'), '');
-    String fileName = '$studentName-${widget.grade}-$reps-$label-$timestamp.csv';
-    String path = await generateCsvFile(csvData, fileName);
-    bool uploadSuccess = await uploadFileToFirebase(path, additionalInfo);
+      final timestamp = DateTime.now().toString().replaceAll(RegExp(r'[^0-9]'), '');
+      String fileName = '$exerciseName-${widget.grade}-${widget.studentName}-$reps-$label-$timestamp.csv';
+      String path = await generateCsvFile(csvData, fileName);
+      bool uploadSuccess = await uploadFileToFirebase(path, additionalInfo);
 
-    if (!uploadSuccess) {
-      // String fileName = '$studentName-${widget.grade}-$reps-$label-$timestamp.csv';
-      String savedFilePath = await saveCSVLocally(csvString, fileName);
-      
-      if (savedFilePath.isNotEmpty) {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text('Upload Status'),
-              content: const Text('Upload failed or timed out. Data saved locally.'),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('OK'),
-                ),
-                // TextButton(
-                //   onPressed: () {
-                //     Navigator.of(context).pop();
-                //     openSavedFile(savedFilePath);
-                //   },
-                //   child: const Text('Open File'),
-                // ),
-              ],
-            );
-          },
-        );
+      if (!uploadSuccess) {
+        String savedFilePath = await saveCSVLocally(csvString, fileName);
+        
+        if (savedFilePath.isNotEmpty) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Upload Status'),
+                content: const Text('Upload failed or timed out. Data saved locally.'),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('OK'),
+                  ),
+                ],
+              );
+            },
+          );
+        }
       }
     }
   }
-  }
 
-    setState(() {
-      sensorData.clear();
-      csvData.clear();
-      elapsedTime = 0;
-      isCollecting = false;
-    });
-  }
+  setState(() {
+    sensorData.clear();
+    csvData.clear();
+    elapsedTime = 0;
+    isCollecting = false;
+  });
+}
   
 
   void bandCallibration() async {

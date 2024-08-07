@@ -12,17 +12,16 @@ class BluetoothScreen extends StatefulWidget {
   const BluetoothScreen({
     super.key,
     required this.sensors,
-    required this.exerciseName,
     required this.schoolName,
     required this.grade,
-    // required this.studentName,
+    required this.studentName,
     required this.allowedDeviceNames,
   });
 
   final List sensors;
   final String schoolName;
-  // final String studentName;
-  final String exerciseName;
+  final String studentName;
+  //final String exerciseName;
   final String grade;
   final List<String> allowedDeviceNames;
 
@@ -42,23 +41,25 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
   }
 
   void showConnectDialog() async {
-    String sensorContent = '';
+    String sensorContent = 'Sense Right Hand\nSense Left Hand\nSense Right Leg\nSense Left Leg\n';
 
-    if (widget.sensors.contains(1)) {
-      sensorContent += 'Sense Right Hand\n';
-    }
-    if (widget.sensors.contains(2)) {
-      sensorContent += 'Sense Left Hand\n';
-    }
-    if (widget.sensors.contains(3)) {
-      sensorContent += 'Sense Right Leg\n';
-    }
-    if (widget.sensors.contains(4)) {
-      sensorContent += 'Sense Left Leg\n';
-    }
-    if (widget.sensors.contains(5)) {
-      sensorContent += 'Sense Ball';
-    }
+    sensorContent += 'If doing a ball exercise, please connect to the Sense Ball device.';
+
+    // if (widget.sensors.contains(1)) {
+    //   sensorContent += 'Sense Right Hand\n';
+    // }
+    // if (widget.sensors.contains(2)) {
+    //   sensorContent += 'Sense Left Hand\n';
+    // }
+    // if (widget.sensors.contains(3)) {
+    //   sensorContent += 'Sense Right Leg\n';
+    // }
+    // if (widget.sensors.contains(4)) {
+    //   sensorContent += 'Sense Left Leg\n';
+    // }
+    // if (widget.sensors.contains(5)) {
+    //   sensorContent += 'Sense Ball';
+    // }
 
     showDialog(
         context: context,
@@ -270,9 +271,8 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
                           MaterialPageRoute(
                             builder: (context) => DataCollection(
                               schoolName: widget.schoolName,
-                              // studentName: widget.studentName,
                               grade: widget.grade,
-                              exerciseName: widget.exerciseName,
+                              studentName: widget.studentName,
                             ),
                           ),
                         );

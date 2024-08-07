@@ -11,7 +11,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _schoolNameController = TextEditingController();
-  // final TextEditingController _studentNameController = TextEditingController();
+  final TextEditingController _studentNameController = TextEditingController();
+  String studentName = '';
   String grade = 'Nursery';
   final List<String> genders = ['Male', 'Female'];
 
@@ -128,11 +129,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     String? school = prefs.getString('school');
     String? g = prefs.getString('grade');
+    String? studentName = prefs.getString('studentName');
     if (school != null && g != null) {
       setState(() {
         _schoolNameController.text = school;
         grade = g;
-        exercise = gradeExercises[grade]![0];
+        _studentNameController.text = studentName ?? '';
       });
     }
   }
@@ -141,22 +143,23 @@ class _HomeScreenState extends State<HomeScreen> {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('school', _schoolNameController.text);
     await prefs.setString('grade', grade);
+    await prefs.setString('studentName', _studentNameController.text);
 
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => BluetoothScreen(
-          sensors: exercises[exercise] ?? [],
+          sensors: const [], // We'll set this later when choosing the exercise
           schoolName: _schoolNameController.text,
           grade: grade,
-          exerciseName: exercise,
+          studentName: _studentNameController.text,
           allowedDeviceNames: const [
             'Sense Right Hand',
             'Sense Left Hand',
             'Sense Right Leg',
             'Sense Left Leg',
             'Sense Ball'
-          ], // Add your allowed device names here
+          ],
         ),
       ),
     );
@@ -192,6 +195,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 decoration: const InputDecoration(label: Text('School Name')),
               ),
               SizedBox(height: screenHeight * 0.07),
+              TextField(
+                controller: _studentNameController,
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: fontsize,
+                ),
+                decoration: const InputDecoration(label: Text('Student Name')),
+              ),
+              SizedBox(height: screenHeight * 0.07),
               Text(
                 'Grade',
                 style: TextStyle(color: Colors.black, fontSize: fontsize),
@@ -211,29 +223,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 onChanged: (newValue) {
                   setState(() {
                     grade = newValue!;
-                    exercise = gradeExercises[grade]![0];
-                  });
-                },
-              ),
-              SizedBox(height: screenHeight * 0.07),
-              Text(
-                'Exercise',
-                style: TextStyle(color: Colors.black, fontSize: fontsize),
-              ),
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(
-                  hintText: 'Select Exercise',
-                ),
-                value: exercise,
-                items: gradeExercises[grade]!.map((exercise) {
-                  return DropdownMenuItem<String>(
-                    value: exercise,
-                    child: Text(exercise),
-                  );
-                }).toList(),
-                onChanged: (newValue) {
-                  setState(() {
-                    exercise = newValue!;
                   });
                 },
               ),
