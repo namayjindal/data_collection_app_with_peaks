@@ -6,7 +6,6 @@ import 'dart:developer' as dev;
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:math';
-// import 'package:open_file/open_file.dart';
 
 import 'package:csv/csv.dart';
 import 'package:data_collection/home.dart';
@@ -239,7 +238,7 @@ class _DataCollectionState extends State<DataCollection> {
     Completer<bool> uploadCompleter = Completer<bool>();
 
     // Set up the timeout
-    timeoutTimer = Timer(const Duration(seconds: 10), () {
+    timeoutTimer = Timer(const Duration(seconds: 7), () {
       if (!uploadComplete) {
         uploadCompleter.complete(false);
       }
@@ -303,31 +302,8 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
     final folderName = 'SavedCSVFiles';
     final newDirectory = Directory('${directory.path}/$folderName');
     
-    if (!await newDirectory.exists()) {
-      await newDirectory.create(recursive: true);
-    }
-    
     final file = File('${newDirectory.path}/$fileName');
-    await file.writeAsString(csvContent);
     dev.log('CSV file saved locally: ${file.path}');
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Local Save Status'),
-          content: Text('Data saved locally: $folderName/$fileName'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
 
     return file.path;
   } catch (e) {
@@ -335,17 +311,6 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
     return '';
   }
 }
-
-// Future<void> openSavedFile(String filePath) async {
-//   try {
-//     final result = await OpenFile.open(filePath);
-//     if (result.type != ResultType.done) {
-//       dev.log('Error opening file: ${result.message}');
-//     }
-//   } catch (e) {
-//     dev.log('Error opening file: $e');
-//   }
-// }
 
   void getData() async {
     setState(() {
