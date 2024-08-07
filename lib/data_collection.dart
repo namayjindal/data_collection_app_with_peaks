@@ -6,6 +6,7 @@ import 'dart:developer' as dev;
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:math';
+// import 'package:open_file/open_file.dart';
 
 import 'package:csv/csv.dart';
 import 'package:data_collection/home.dart';
@@ -183,72 +184,95 @@ class _DataCollectionState extends State<DataCollection> {
     return headers;
   }
 
-  Future<String> generateCsvFile(List<List<dynamic>> data) async {
+  Future<String> generateCsvFile(List<List<dynamic>> data, String fileName) async {
     List<String> headers = generateHeaderRow();
     data.insert(0, headers);
 
     String csvString = const ListToCsvConverter().convert(data);
     final directory = await getApplicationDocumentsDirectory();
-    final path = '${directory.path}/data.csv';
+    final path = '${directory.path}/$fileName.csv';
     final file = File(path);
     await file.writeAsString(csvString);
     return path;
   }
 
-  Future<void> uploadFileToFirebase(
-      String filePath, String additionalInfo) async {
-    File file = File(filePath);
-    try {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return const AlertDialog(
-            content: Row(
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(width: 20),
-                Text("Uploading..."),
-              ],
-            ),
-          );
-        },
-      );
+  Future<bool> uploadFileToFirebase(String filePath, String additionalInfo) async {
+  File file = File(filePath);
+  bool uploadComplete = false;
+  late Timer timeoutTimer;
 
-      final timestamp = DateTime.now()
-          .toString()
-          .substring(0, DateTime.now().toString().length - 5);
-      String fileName = '$studentName-${widget.grade}-$reps-$label-$timestamp';
-      Reference storageRef = FirebaseStorage.instance
-          .ref('${widget.schoolName}/${widget.exerciseName}/$fileName.csv');
+  try {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 20),
+              Text("Uploading..."),
+            ],
+          ),
+        );
+      },
+    );
 
-      // Create metadata
-      SettableMetadata metadata = SettableMetadata(
-        customMetadata: {
-          'additionalInfo': additionalInfo,
-          'label': label,
-          'reps': reps.toString(),
-          'studentName': studentName,
-          'gender': gender,
-          'grade': widget.grade,
-          'exerciseName': widget.exerciseName,
-        },
-      );
+    final timestamp = DateTime.now().toString().replaceAll(RegExp(r'[^0-9]'), '');
+    String fileName = '$studentName-${widget.grade}-$reps-$label-$timestamp.csv';
+    Reference storageRef = FirebaseStorage.instance
+        .ref('${widget.schoolName}/${widget.exerciseName}/$fileName');
 
-      // Upload file with metadata
-      await storageRef.putFile(file, metadata);
+    SettableMetadata metadata = SettableMetadata(
+      customMetadata: {
+        'additionalInfo': additionalInfo,
+        'label': label,
+        'reps': reps.toString(),
+        'studentName': studentName,
+        'gender': gender,
+        'grade': widget.grade,
+        'exerciseName': widget.exerciseName,
+      },
+    );
 
-      Navigator.of(context).pop();
+    // Create a Completer to handle the timeout
+    Completer<bool> uploadCompleter = Completer<bool>();
 
+    // Set up the timeout
+    timeoutTimer = Timer(const Duration(seconds: 10), () {
+      if (!uploadComplete) {
+        uploadCompleter.complete(false);
+      }
+    });
+
+    // Start the upload
+    storageRef.putFile(file, metadata).then((_) {
+      uploadComplete = true;
+      uploadCompleter.complete(true);
+    }).catchError((error) {
+      dev.log('Error during upload: $error');
+      uploadCompleter.complete(false);
+    });
+
+    // Wait for either the upload to complete or the timeout
+    bool success = await uploadCompleter.future;
+
+    // Cancel the timer if it hasn't fired yet
+    if (timeoutTimer.isActive) {
+      timeoutTimer.cancel();
+    }
+
+    // Close the upload dialog
+    Navigator.of(context, rootNavigator: true).pop();
+
+    if (success) {
       dev.log('File uploaded successfully with metadata');
-
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
             title: const Text('Upload Status'),
-            content: const Text(
-                'Data saved successfully with additional information!'),
+            content: const Text('Data saved successfully with additional information!'),
             actions: <Widget>[
               TextButton(
                 onPressed: () {
@@ -260,11 +284,68 @@ class _DataCollectionState extends State<DataCollection> {
           );
         },
       );
-    } on FirebaseException catch (e) {
-      Navigator.of(context).pop();
-      dev.log('Error uploading file: $e');
+      return true;
+    } else {
+      dev.log('Upload failed or timed out');
+      return false;
     }
+  } catch (e) {
+    dev.log('Error in uploadFileToFirebase: $e');
+    // Ensure the dialog is closed in case of any error
+    Navigator.of(context, rootNavigator: true).pop();
+    return false;
   }
+}
+
+Future<String> saveCSVLocally(String csvContent, String fileName) async {
+  try {
+    final directory = await getApplicationDocumentsDirectory();
+    final folderName = 'SavedCSVFiles';
+    final newDirectory = Directory('${directory.path}/$folderName');
+    
+    if (!await newDirectory.exists()) {
+      await newDirectory.create(recursive: true);
+    }
+    
+    final file = File('${newDirectory.path}/$fileName');
+    await file.writeAsString(csvContent);
+    dev.log('CSV file saved locally: ${file.path}');
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Local Save Status'),
+          content: Text('Data saved locally: $folderName/$fileName'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+
+    return file.path;
+  } catch (e) {
+    dev.log('Error saving CSV locally: $e');
+    return '';
+  }
+}
+
+// Future<void> openSavedFile(String filePath) async {
+//   try {
+//     final result = await OpenFile.open(filePath);
+//     if (result.type != ResultType.done) {
+//       dev.log('Error opening file: ${result.message}');
+//     }
+//   } catch (e) {
+//     dev.log('Error opening file: $e');
+//   }
+// }
 
   void getData() async {
     setState(() {
@@ -505,8 +586,7 @@ class _DataCollectionState extends State<DataCollection> {
                         child: Text(value),
                       );
                     }).toList(),
-                    decoration:
-                        const InputDecoration(labelText: 'Select Label'),
+                    decoration: const InputDecoration(labelText: 'Select Label'),
                   ),
                   DropdownButtonFormField<String>(
                     value: gender,
@@ -521,8 +601,7 @@ class _DataCollectionState extends State<DataCollection> {
                         child: Text(value),
                       );
                     }).toList(),
-                    decoration:
-                        const InputDecoration(labelText: 'Select Gender'),
+                    decoration: const InputDecoration(labelText: 'Select Gender'),
                   ),
                   TextFormField(
                     onChanged: (String value) {
@@ -530,8 +609,7 @@ class _DataCollectionState extends State<DataCollection> {
                         studentName = value;
                       });
                     },
-                    decoration:
-                        const InputDecoration(labelText: 'Student Info'),
+                    decoration: const InputDecoration(labelText: 'Student Info'),
                   ),
                   TextFormField(
                     keyboardType: TextInputType.number,
@@ -540,15 +618,13 @@ class _DataCollectionState extends State<DataCollection> {
                         reps = int.tryParse(value) ?? 0;
                       });
                     },
-                    decoration:
-                        const InputDecoration(labelText: 'Number of Reps/Time'),
+                    decoration: const InputDecoration(labelText: 'Number of Reps/Time'),
                   ),
                   TextFormField(
                     onChanged: (String value) {
                       additionalInfo = value;
                     },
-                    decoration: const InputDecoration(
-                        labelText: 'Additional Information'),
+                    decoration: const InputDecoration(labelText: 'Additional Information'),
                   ),
                 ],
               ),
@@ -567,18 +643,53 @@ class _DataCollectionState extends State<DataCollection> {
         while (sensorData.data.values.any((queue) => queue.isNotEmpty)) {
           var row = organizeDataRow();
           csvData.add(row);
-          // Remove the processed data from sensorData
           for (var queue in sensorData.data.values) {
             if (queue.isNotEmpty) {
               queue.removeFirst();
             }
           }
         }
-        String path = await generateCsvFile(csvData);
-        await uploadFileToFirebase(path, additionalInfo);
+        
+        String csvString = const ListToCsvConverter().convert(csvData);
+    
+    final timestamp = DateTime.now().toString().replaceAll(RegExp(r'[^0-9]'), '');
+    String fileName = '$studentName-${widget.grade}-$reps-$label-$timestamp.csv';
+    String path = await generateCsvFile(csvData, fileName);
+    bool uploadSuccess = await uploadFileToFirebase(path, additionalInfo);
 
+    if (!uploadSuccess) {
+      // String fileName = '$studentName-${widget.grade}-$reps-$label-$timestamp.csv';
+      String savedFilePath = await saveCSVLocally(csvString, fileName);
+      
+      if (savedFilePath.isNotEmpty) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Upload Status'),
+              content: const Text('Upload failed or timed out. Data saved locally.'),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('OK'),
+                ),
+                // TextButton(
+                //   onPressed: () {
+                //     Navigator.of(context).pop();
+                //     openSavedFile(savedFilePath);
+                //   },
+                //   child: const Text('Open File'),
+                // ),
+              ],
+            );
+          },
+        );
       }
     }
+  }
+  }
 
     setState(() {
       sensorData.clear();
@@ -587,6 +698,7 @@ class _DataCollectionState extends State<DataCollection> {
       isCollecting = false;
     });
   }
+  
 
   void bandCallibration() async {
     List<BluetoothDevice> devices = FlutterBluePlus.connectedDevices;
