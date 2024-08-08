@@ -626,13 +626,17 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
   );
 
   if (saveData == true) {
-    bool? ok = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Enter Label and Information',
-              style: TextStyle(color: Colors.black)),
-          content: SingleChildScrollView(
+  final _formKey = GlobalKey<FormState>();
+
+  bool? ok = await showDialog<bool>(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Enter Label and Information',
+            style: TextStyle(color: Colors.black)),
+        content: SingleChildScrollView(
+          child: Form(
+            key: _formKey, // Attach the form key here
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -691,6 +695,12 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
                     });
                   },
                   decoration: const InputDecoration(labelText: 'Number of Reps/Time'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter the number of reps';
+                    }
+                    return null;
+                  },
                 ),
                 TextFormField(
                   onChanged: (String value) {
@@ -701,15 +711,22 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
               ],
             ),
           ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              if (_formKey.currentState?.validate() ?? false) {
+                Navigator.of(context).pop(true);
+              }
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      );
+    },
+  );
+
+
 
       if (ok == true) {
         while (sensorData.data.values.any((queue) => queue.isNotEmpty)) {
