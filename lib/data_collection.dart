@@ -14,6 +14,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'peak_detection.dart';
 
 class DataCollection extends StatefulWidget {
   const DataCollection({
@@ -292,7 +293,7 @@ class _DataCollectionState extends State<DataCollection> {
     return path;
   }
 
-  Future<bool> uploadFileToFirebase(String filePath, String additionalInfo) async {
+  Future<bool> uploadFileToFirebase(String filePath, String additionalInfo, String peaks) async {
   File file = File(filePath);
   bool uploadComplete = false;
   late Timer timeoutTimer;
@@ -368,7 +369,7 @@ class _DataCollectionState extends State<DataCollection> {
         builder: (BuildContext context) {
           return AlertDialog(
             title: const Text('Upload Status'),
-            content: const Text('Data saved successfully with additional information!'),
+            content: Text('Data saved successfully with additional information! \n Reps detected: $peaks'),
             actions: <Widget>[
               TextButton(
                 onPressed: () {
@@ -744,7 +745,45 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
       final timestamp = DateTime.now().toString().replaceAll(RegExp(r'[^0-9]'), '');
       String fileName = '$exerciseName-${widget.grade}-${widget.studentName}-$reps-$label-$timestamp.csv';
       String path = await generateCsvFile(csvData, fileName);
-      bool uploadSuccess = await uploadFileToFirebase(path, additionalInfo);
+
+      // Perform peak detection
+      List<PeakSensorData> rightHandData = [];
+      List<PeakSensorData> leftHandData = [];
+
+      for (var row in csvData.skip(1)) { // Skip header row
+        if (row.length >= 18) { // Ensure we have enough data for both hands
+          rightHandData.add(PeakSensorData(
+            timestamp: double.parse(row[0].toString()),
+            index: int.parse(row[1].toString()),
+            accelX: double.parse(row[2].toString()),
+            accelY: double.parse(row[3].toString()),
+            accelZ: double.parse(row[4].toString()),
+            gyroX: double.parse(row[5].toString()),
+            gyroY: double.parse(row[6].toString()),
+            gyroZ: double.parse(row[7].toString()),
+            battery: double.parse(row[8].toString()),
+          ));
+          leftHandData.add(PeakSensorData(
+            timestamp: double.parse(row[9].toString()),
+            index: int.parse(row[10].toString()),
+            accelX: double.parse(row[11].toString()),
+            accelY: double.parse(row[12].toString()),
+            accelZ: double.parse(row[13].toString()),
+            gyroX: double.parse(row[14].toString()),
+            gyroY: double.parse(row[15].toString()),
+            gyroZ: double.parse(row[16].toString()),
+            battery: double.parse(row[17].toString()),
+          ));
+        }
+      }
+
+
+      int peakCount = countPeaks(rightHandData, leftHandData);
+      dev.log('Total peaks detected: $peakCount');
+
+      additionalInfo += '\nTotal peaks detected: $peakCount';
+        
+      bool uploadSuccess = await uploadFileToFirebase(path, additionalInfo, (peakCount - 1).toString());
 
       if (!uploadSuccess) {
         String savedFilePath = await saveCSVLocally(csvString, fileName);
