@@ -71,5 +71,5 @@ int countPeaks(List<PeakSensorData> rightHandData, List<PeakSensorData> leftHand
   print('Right hand peaks: ${rightHandPeaks.length}');
   print('Left hand peaks: ${leftHandPeaks.length}');
 
-  return (rightHandPeaks.length + leftHandPeaks.length) ~/ 2 + 1; // Average of both hands
+  return (rightHandPeaks.length + leftHandPeaks.length) ~/ 2; // Average of both hands
 }
