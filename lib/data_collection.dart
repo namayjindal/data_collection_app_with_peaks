@@ -124,6 +124,8 @@ class _DataCollectionState extends State<DataCollection> {
   String label = 'Good';
   String gender = 'Male';
   int reps = 0;
+  int peaks = 0;
+  int anomalyCount = 0;
   int MLreps = 0;
   bool isCollecting = false;
   bool isProcessingData = true;
@@ -423,6 +425,9 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
       isCollecting = true;
       isFirstReading = true;
       isProcessingData = true; // Start processing data again
+      peaks = 0;
+      MLreps = 0;
+      anomalyCount = 0;
     });
 
     List<BluetoothDevice> devices = FlutterBluePlus.connectedDevices;
@@ -747,7 +752,13 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
         
       String csvString = const ListToCsvConverter().convert(csvData);
 
-      int peaks = processPeakData(csvData);
+      List<int> mlInfo = processPeakData(csvData);
+
+      peaks = mlInfo[0];
+
+      anomalyCount = mlInfo[1];
+
+      MLreps = peaks - anomalyCount;
     
       final timestamp = DateTime.now().toString().replaceAll(RegExp(r'[^0-9]'), '');
       String fileName = '$exerciseName-${widget.grade}-${widget.studentName}-$reps-$label-$timestamp.csv';
@@ -763,7 +774,7 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
             builder: (BuildContext context) {
               return AlertDialog(
                 title: const Text('Upload Status'),
-                content: Text('Upload failed or timed out. Data saved locally.\nNumber of peaks detected: $peaks'),
+                content: Text('Upload failed or timed out. Data saved locally.\nNumber of peaks detected: $peaks\nNumber of anomalies detected: $anomalyCount\nNumber of reps detected: $MLreps'),
                 actions: <Widget>[
                   TextButton(
                     onPressed: () {
@@ -781,6 +792,9 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
   }
 
   setState(() {
+    // peaks = 0;
+    // anomalyCount = 0;
+    // MLreps = 0;
     sensorData.clear();
     csvData.clear();
     elapsedTime = 0;

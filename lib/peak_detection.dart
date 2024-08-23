@@ -34,13 +34,15 @@ List<int> detectPeaks(List<double> data, {int windowSize = 20, double sensitivit
   return peakIndices;
 }
 
-int processPeakData(List<List<dynamic>> csvData) {
+List<int> processPeakData(List<List<dynamic>> csvData) {
   // Remove empty lists from CSV data
   csvData.removeWhere((row) => row.isEmpty);
 
   List<double> xAccelData = csvData.map((row) => double.parse(row[2].toString())).toList();
   
   List<int> peaks = detectPeaks(xAccelData);
+
+  int segmentAnomalyCount = 0;
   
   print('Number of peaks detected: ${peaks.length}');
   
@@ -66,11 +68,21 @@ int processPeakData(List<List<dynamic>> csvData) {
     print(segment);
 
     // Process the extracted segment
-    FeatureExtractor extractor = FeatureExtractor(4); // Example window size
-    extractor.processSegment(segment);
+    FeatureExtractor extractor = FeatureExtractor(4);
+    Future<bool> isSegmentAnomalyFuture = extractor.processSegment(segment);
+
+    print('Segment Anomaly Status: $isSegmentAnomalyFuture');
+
+    isSegmentAnomalyFuture.then((isSegmentAnomaly) {
+      if (isSegmentAnomaly) {
+        segmentAnomalyCount++;
+      }
+    });
 
     print('---');
   }
 
-  return (peaks.length);
+  print('Total Anomaly Count: $segmentAnomalyCount');
+
+  return [peaks.length, segmentAnomalyCount];
 }

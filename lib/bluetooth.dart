@@ -104,7 +104,7 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
       await FlutterBluePlus.turnOn();
     }
 
-    await FlutterBluePlus.startScan(timeout: const Duration(seconds: 5));
+    await FlutterBluePlus.startScan(timeout: const Duration(seconds: 3));
 
     var data = FlutterBluePlus.onScanResults.listen(
       (results) {
@@ -125,7 +125,7 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
           .showSnackBar(SnackBar(content: Text(e.toString()))),
     );
 
-    await Future.delayed(const Duration(seconds: 5));
+    await Future.delayed(const Duration(seconds: 3));
     await FlutterBluePlus.stopScan();
 
     FlutterBluePlus.cancelWhenScanComplete(data);

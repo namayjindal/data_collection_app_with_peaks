@@ -1,31 +1,38 @@
 import 'dart:math';
 import 'dart:convert';
 
+import 'package:data_collection/tflite_anomaly_detector.dart';
+
 class FeatureExtractor {
   final int windowSize;
 
   FeatureExtractor(this.windowSize);
 
-  List<Map<String, double>> calculateFeatures(List<double> segment) {
-    List<Map<String, double>> features = [];
+  List<List<double>> calculateFeaturesForWindows(List<List<double>> segment) {
+    List<String> axes = ['right_leg_accel_x', 'right_leg_accel_y', 'right_leg_accel_z', 'left_leg_accel_x', 'left_leg_accel_y', 'left_leg_accel_z'];
+    List<List<double>> allWindowFeatures = [];
 
-    for (int start = 0; start <= segment.length - windowSize; start += 4) {
-      List<double> window = segment.sublist(start, start + windowSize);
+    for (int start = 0; start <= segment.length - windowSize; start+=2) {
+      List<double> windowFeatures = [];
 
-      Map<String, double> featureVector = {
-        'mean': _mean(window),
-        'std_dev': _stdDev(window),
-        'rms': _rms(window),
-        'min': window.reduce(min),
-        'max': window.reduce(max),
-        'skewness': _skewness(window),
-        'kurtosis': _kurtosis(window)
-      };
+      for (int i = 0; i < axes.length; i++) {
+        List<double> axisSegment = segment.sublist(start, start + windowSize).map((row) => row[i]).toList();
+        
+        windowFeatures.addAll([
+          _mean(axisSegment),
+          _stdDev(axisSegment),
+          _rms(axisSegment),
+          axisSegment.reduce(min),
+          axisSegment.reduce(max),
+          _skewness(axisSegment),
+          _kurtosis(axisSegment)
+        ]);
+      }
 
-      features.add(featureVector);
+      allWindowFeatures.add(windowFeatures);
     }
 
-    return features;
+    return allWindowFeatures;
   }
 
   double _mean(List<double> data) {
@@ -72,26 +79,37 @@ class FeatureExtractor {
     return kurt.isNaN ? 0.0 : kurt;
   }
 
-  void processSegment(List<List<double>> segment) {
-    Map<String, List<Map<String, double>>> allFeatures = {};
+  Future<bool> processSegment(List<List<double>> segment) async {
+    List<List<double>> featuresForWindows = calculateFeaturesForWindows(segment);
+    int noOfAnomaliesInSegment = 0;
+    bool isSegmentAnomaly = false;
 
-    List<String> axes = ['right_leg_accel_x', 'right_leg_accel_y', 'right_leg_accel_z', 'left_leg_accel_x', 'left_leg_accel_y', 'left_leg_accel_z'];
+    for (var windowFeatures in featuresForWindows) {
+      bool? isAnomaly = await runTFLiteModel(windowFeatures);
 
-    for (int i = 0; i < axes.length; i++) {
-      List<double> axisSegment = segment.map((row) => row[i]).toList();
-
-      List<Map<String, double>> features = calculateFeatures(axisSegment);
-      allFeatures[axes[i]] = features;
+      if (isAnomaly) {
+        noOfAnomaliesInSegment++;
+      }
     }
 
-    _logFeatures(allFeatures);
+    if (noOfAnomaliesInSegment > segment.length / windowSize / 2) {
+      isSegmentAnomaly = true;
+    }
+
+    _logFeaturesAndScores(featuresForWindows, isSegmentAnomaly);
+
+    return isSegmentAnomaly;
+
   }
 
-  void _logFeatures(Map<String, List<Map<String, double>>> allFeatures) {
-    allFeatures.forEach((axis, features) {
-      for (var feature in features) {
-        print('Axis: $axis, Features: ${jsonEncode(feature)}');
-      }
-    });
+  void _logFeaturesAndScores(List<List<double>> featuresForWindows, bool isSegmentAnomaly) {
+    for (int i = 0; i < featuresForWindows.length; i++) {
+      print('Window $i:');
+      print('Features: ${jsonEncode(featuresForWindows[i])}');
+      print('Features length: ${featuresForWindows[i].length}');
+      print('Is segment anomaly: $isSegmentAnomaly');
+      print('---');
+    }
+    print('Total windows processed: ${featuresForWindows.length}');
   }
 }
