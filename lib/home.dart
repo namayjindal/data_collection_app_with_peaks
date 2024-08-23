@@ -158,7 +158,11 @@ class _HomeScreenState extends State<HomeScreen> {
             'Sense Left Hand',
             'Sense Right Leg',
             'Sense Left Leg',
-            'Sense Ball'
+            'Sense Ball',
+            'Sakshi Right Hand',
+            'Sakshi Left Hand',
+            'Sakshi Right Leg',
+            'Sakshi Left Leg',
           ],
         ),
       ),
