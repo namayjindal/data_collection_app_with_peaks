@@ -1,26 +1,4 @@
 import 'dart:math';
-import 'dart:developer' as dev;
-import 'dsp.dart';
-
-class PeakSensorData {
-  final double timestamp;
-  final int index;
-  final double accelX, accelY, accelZ;
-  final double gyroX, gyroY, gyroZ;
-  final double battery;
-
-  PeakSensorData({
-    required this.timestamp,
-    required this.index,
-    required this.accelX,
-    required this.accelY,
-    required this.accelZ,
-    required this.gyroX,
-    required this.gyroY,
-    required this.gyroZ,
-    required this.battery,
-  });
-}
 
 List<double> movingAverage(List<double> signal, int windowSize) {
   List<double> result = List<double>.filled(signal.length, 0);
@@ -32,26 +10,22 @@ List<double> movingAverage(List<double> signal, int windowSize) {
   return result;
 }
 
-List<int> detectPeaks(List<PeakSensorData> data, int windowSize, double sensitivityFactor, int minDistance) {
+List<int> detectPeaks(List<double> data, {int windowSize = 20, double sensitivityFactor = 0.4, int minDistance = 5}) {
   List<int> peakIndices = [];
-  List<double> zAccelerations = data.map((d) => d.accelZ).toList();
-  List<int> indices = data.map((d) => d.index).toList();
+  List<double> movingAvg = movingAverage(data, windowSize);
   
-  List<double> movingAvg = movingAverage(zAccelerations, windowSize);
-  
-  double mean = zAccelerations.reduce((a, b) => a + b) / zAccelerations.length;
-  double sqSum = zAccelerations.map((z) => z * z).reduce((a, b) => a + b);
-  double stdDev = sqrt(sqSum / zAccelerations.length - mean * mean);
+  double mean = data.reduce((a, b) => a + b) / data.length;
+  double stdDev = sqrt(data.map((x) => pow(x - mean, 2)).reduce((a, b) => a + b) / data.length);
   
   double threshold = sensitivityFactor * stdDev;
   for (int i = 1; i < data.length - 1; i++) {
-    double current = zAccelerations[i];
+    double current = data[i];
     if (current > movingAvg[i] + threshold &&
-        current > zAccelerations[i-1] &&
-        current > zAccelerations[i+1] &&
+        current > data[i-1] &&
+        current > data[i+1] &&
         current > 0) {
       if (peakIndices.isEmpty || i - peakIndices.last >= minDistance) {
-        peakIndices.add(indices[i]);
+        peakIndices.add(i);
       }
     }
   }
@@ -59,62 +33,30 @@ List<int> detectPeaks(List<PeakSensorData> data, int windowSize, double sensitiv
   return peakIndices;
 }
 
-void logSegments(List<PeakSensorData> data, List<int> peakIndices) {
-  for (int i = 0; i < peakIndices.length - 1; i++) {
-    int start = peakIndices[i];
-    int end = peakIndices[i + 1];
-    List<PeakSensorData> segment = data.where((d) => d.index >= start && d.index <= end).toList();
+void processPeakData(List<List<dynamic>> csvData) {
+  // Remove empty lists from CSV data
+  csvData.removeWhere((row) => row.isEmpty);
+
+  List<double> xAccelData = csvData.map((row) => double.parse(row[2].toString())).toList();
+  
+  List<int> peaks = detectPeaks(xAccelData);
+  
+  print('Number of peaks detected: ${peaks.length}');
+  
+  // Extract relevant columns (indices 2, 3, 4, 11, 12, 13)
+  for (int i = 0; i < peaks.length - 1; i++) {
+    int start = peaks[i];
+    int end = peaks[i+1];
     
-    dev.log('Segment between indices $start and $end:');
-    for (var entry in segment) {
-      dev.log('Timestamp: ${entry.timestamp}, Index: ${entry.index}, '
-              'Right AccelX: ${entry.accelX}, Right AccelY: ${entry.accelY}, Right AccelZ: ${entry.accelZ}, '
-              'Left AccelX: ${entry.accelX}, Left AccelY: ${entry.accelY}, Left AccelZ: ${entry.accelZ}');
+    print('Segment between peaks $start and $end:');
+    for (int j = start; j < end; j++) {
+      print('${double.parse(csvData[j][2].toString())}, '
+            '${double.parse(csvData[j][3].toString())}, '
+            '${double.parse(csvData[j][4].toString())}, '
+            '${double.parse(csvData[j][11].toString())}, '
+            '${double.parse(csvData[j][12].toString())}, '
+            '${double.parse(csvData[j][13].toString())}');
     }
+    print('---');
   }
 }
-
-int processPeaksAndLogSegments(List<PeakSensorData> rightLegData, List<PeakSensorData> leftLegData) {
-  int windowSize = 20;
-  double sensitivityFactor = 0.4;
-  int minDistance = 5;
-
-  List<int> rightLegPeaks = detectPeaks(rightLegData, windowSize, sensitivityFactor, minDistance);
-  List<int> leftLegPeaks = detectPeaks(leftLegData, windowSize, sensitivityFactor, minDistance);
-
-  dev.log('Right leg peaks: ${rightLegPeaks.length}');
-  dev.log('Left leg peaks: ${leftLegPeaks.length}');
-
-  if (rightLegPeaks.isNotEmpty) {
-    dev.log('Right leg peaks: ${rightLegPeaks}');
-    logSegments(rightLegData, rightLegPeaks);
-  }
-
-  if (leftLegPeaks.isNotEmpty) {
-    dev.log('Left leg peaks: ${leftLegPeaks}');
-    logSegments(leftLegData, leftLegPeaks);
-  }
-
-  return rightLegPeaks.length;
-}
-
-// List<int> countPeaks(List<PeakSensorData> rightHandData, List<PeakSensorData> leftHandData) {
-//   int windowSize = 20;
-//   double sensitivityFactor = 0.4;
-//   int minDistance = 5;
-
-//   List<int> rightHandPeaks = detectPeaks(rightHandData, windowSize, sensitivityFactor, minDistance);
-//   // List<int> leftHandPeaks = detectPeaks(leftHandData, windowSize, sensitivityFactor, minDistance);
-
-//   print('Right leg peaks: ${rightHandPeaks.length}');
-//   dev.log('Right leg peaks: ${rightHandPeaks}');
-//   // print('Left leg peaks: ${leftHandPeaks.length}');
-//   // dev.log('Left leg peaks: ${leftHandPeaks}');
-
-//   if (rightHandPeaks.isEmpty) {
-//     return [0, 0];
-//   }
-
-//   // return [(rightHandPeaks.length + leftHandPeaks.length) ~/ 2, rightHandPeaks[0]]; // Average of both hands
-//   return [rightHandPeaks.length, rightHandPeaks[0]];
-// }

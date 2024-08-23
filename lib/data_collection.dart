@@ -124,6 +124,7 @@ class _DataCollectionState extends State<DataCollection> {
   String label = 'Good';
   String gender = 'Male';
   int reps = 0;
+  int MLreps = 0;
   bool isCollecting = false;
   bool isProcessingData = true;
   bool isFirstReading = true;
@@ -746,7 +747,7 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
         
       String csvString = const ListToCsvConverter().convert(csvData);
 
-      
+      processPeakData(csvData);
     
       final timestamp = DateTime.now().toString().replaceAll(RegExp(r'[^0-9]'), '');
       String fileName = '$exerciseName-${widget.grade}-${widget.studentName}-$reps-$label-$timestamp.csv';
