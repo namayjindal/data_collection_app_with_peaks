@@ -752,7 +752,7 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
         
       String csvString = const ListToCsvConverter().convert(csvData);
 
-      List<int> mlInfo = processPeakData(csvData);
+      List<int> mlInfo = await processPeakData(csvData);
 
       peaks = mlInfo[0];
 

@@ -26,7 +26,7 @@ Future<bool> runTFLiteModel(List<double> inputFeatures) async {
     double anomalyScore = output[0];
     print('Anomaly Score: $anomalyScore');
 
-    if (anomalyScore > 100) {
+    if (anomalyScore > 500) {
       return true;
     }
     else{

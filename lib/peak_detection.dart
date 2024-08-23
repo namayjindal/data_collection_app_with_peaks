@@ -34,7 +34,7 @@ List<int> detectPeaks(List<double> data, {int windowSize = 20, double sensitivit
   return peakIndices;
 }
 
-List<int> processPeakData(List<List<dynamic>> csvData) {
+Future<List<int>> processPeakData(List<List<dynamic>> csvData) async {
   // Remove empty lists from CSV data
   csvData.removeWhere((row) => row.isEmpty);
 
@@ -69,15 +69,13 @@ List<int> processPeakData(List<List<dynamic>> csvData) {
 
     // Process the extracted segment
     FeatureExtractor extractor = FeatureExtractor(4);
-    Future<bool> isSegmentAnomalyFuture = extractor.processSegment(segment);
+    bool isSegmentAnomaly = await extractor.processSegment(segment);
 
-    print('Segment Anomaly Status: $isSegmentAnomalyFuture');
+    print('Segment Anomaly Status: $isSegmentAnomaly');
 
-    isSegmentAnomalyFuture.then((isSegmentAnomaly) {
-      if (isSegmentAnomaly) {
-        segmentAnomalyCount++;
-      }
-    });
+    if (isSegmentAnomaly) {
+      segmentAnomalyCount++;
+    }
 
     print('---');
   }
