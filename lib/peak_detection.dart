@@ -34,7 +34,7 @@ List<int> detectPeaks(List<double> data, {int windowSize = 20, double sensitivit
   return peakIndices;
 }
 
-void processPeakData(List<List<dynamic>> csvData) {
+int processPeakData(List<List<dynamic>> csvData) {
   // Remove empty lists from CSV data
   csvData.removeWhere((row) => row.isEmpty);
 
@@ -71,4 +71,6 @@ void processPeakData(List<List<dynamic>> csvData) {
 
     print('---');
   }
+
+  return (peaks.length);
 }

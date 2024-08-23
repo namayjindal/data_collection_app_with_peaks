@@ -747,7 +747,7 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
         
       String csvString = const ListToCsvConverter().convert(csvData);
 
-      processPeakData(csvData);
+      int peaks = processPeakData(csvData);
     
       final timestamp = DateTime.now().toString().replaceAll(RegExp(r'[^0-9]'), '');
       String fileName = '$exerciseName-${widget.grade}-${widget.studentName}-$reps-$label-$timestamp.csv';
@@ -763,7 +763,7 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
             builder: (BuildContext context) {
               return AlertDialog(
                 title: const Text('Upload Status'),
-                content: const Text('Upload failed or timed out. Data saved locally.'),
+                content: Text('Upload failed or timed out. Data saved locally.\nNumber of peaks detected: $peaks'),
                 actions: <Widget>[
                   TextButton(
                     onPressed: () {
