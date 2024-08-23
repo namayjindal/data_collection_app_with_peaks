@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dsp.dart';
 
 List<double> movingAverage(List<double> signal, int windowSize) {
   List<double> result = List<double>.filled(signal.length, 0);
@@ -48,15 +49,26 @@ void processPeakData(List<List<dynamic>> csvData) {
     int start = peaks[i];
     int end = peaks[i+1];
     
-    print('Segment between peaks $start and $end:');
+    List<List<double>> segment = [];
+
     for (int j = start; j < end; j++) {
-      print('${double.parse(csvData[j][2].toString())}, '
-            '${double.parse(csvData[j][3].toString())}, '
-            '${double.parse(csvData[j][4].toString())}, '
-            '${double.parse(csvData[j][11].toString())}, '
-            '${double.parse(csvData[j][12].toString())}, '
-            '${double.parse(csvData[j][13].toString())}');
+      segment.add([
+        double.parse(csvData[j][2].toString()),  
+        double.parse(csvData[j][3].toString()), 
+        double.parse(csvData[j][4].toString()), 
+        double.parse(csvData[j][11].toString()), 
+        double.parse(csvData[j][12].toString()), 
+        double.parse(csvData[j][13].toString())
+      ]);
     }
+
+    // Print the extracted segment
+    print(segment);
+
+    // Process the extracted segment
+    FeatureExtractor extractor = FeatureExtractor(4); // Example window size
+    extractor.processSegment(segment);
+
     print('---');
   }
 }

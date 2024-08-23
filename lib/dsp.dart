@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'dart:convert';
-import 'dart:developer' as dev;
 
 class FeatureExtractor {
   final int windowSize;
@@ -73,16 +72,17 @@ class FeatureExtractor {
     return kurt.isNaN ? 0.0 : kurt;
   }
 
-  void processSegment(Map<String, List<double>> segmentData) {
+  void processSegment(List<List<double>> segment) {
     Map<String, List<Map<String, double>>> allFeatures = {};
 
-    segmentData.forEach((axis, segment) {
-      if (axis.contains('accel') || axis.contains('gyro')) {
-        List<Map<String, double>> features = calculateFeatures(segment);
+    List<String> axes = ['right_leg_accel_x', 'right_leg_accel_y', 'right_leg_accel_z', 'left_leg_accel_x', 'left_leg_accel_y', 'left_leg_accel_z'];
 
-        allFeatures[axis] = features;
-      }
-    });
+    for (int i = 0; i < axes.length; i++) {
+      List<double> axisSegment = segment.map((row) => row[i]).toList();
+
+      List<Map<String, double>> features = calculateFeatures(axisSegment);
+      allFeatures[axes[i]] = features;
+    }
 
     _logFeatures(allFeatures);
   }
