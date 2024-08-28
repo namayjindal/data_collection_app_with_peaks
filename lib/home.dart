@@ -163,6 +163,8 @@ class _HomeScreenState extends State<HomeScreen> {
             'Sakshi Left Hand',
             'Sakshi Right Leg',
             'Sakshi Left Leg',
+            'XIAO BLE Sense',
+            'Arduino'
           ],
         ),
       ),
@@ -179,7 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Data Collection'),
+        title: const Text('Data Collection with Peaks'),
       ),
       body: Padding(
         padding: EdgeInsets.symmetric(

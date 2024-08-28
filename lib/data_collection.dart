@@ -124,14 +124,13 @@ class _DataCollectionState extends State<DataCollection> {
   String label = 'Good';
   String gender = 'Male';
   int reps = 0;
-  int peaks = 0;
-  int anomalyCount = 0;
-  int MLreps = 0;
   bool isCollecting = false;
   bool isProcessingData = true;
   bool isFirstReading = true;
-  //String studentName = '';
   String exerciseName = 'namay';
+  int peaks = 0;
+  int MLreps = 0;
+  int anomalyCount = 0;
 
   @override
   void initState() {
@@ -153,6 +152,7 @@ class _DataCollectionState extends State<DataCollection> {
     {'name': 'Sakshi Left Hand', 'prefix': 'left_hand_'},
     {'name': 'Sakshi Right Leg', 'prefix': 'right_leg_'},
     {'name': 'Sakshi Left Leg', 'prefix': 'left_leg_'},
+    {'name': 'XIAO BLE Sense', 'prefix': 'xiao_'},
   ];
 
   final Map<String, List> gradeExercises = {
@@ -250,10 +250,15 @@ class _DataCollectionState extends State<DataCollection> {
     }
   }
   List<String> getConnectedSensorPrefixes() {
+    dev.log(sensorPrefixes
+        .sublist(0, deviceCount)
+        .map((sensor) => sensor['prefix']!)
+        .toList().toString());
     return sensorPrefixes
         .sublist(0, deviceCount)
         .map((sensor) => sensor['prefix']!)
         .toList();
+
   }
 
   List<String> generateHeaderRow() {
@@ -442,12 +447,25 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
     });
 
     for (int i = 0; i < deviceCount; i++) {
+
       var device = devices[i];
 
       // Log the name of the connected device
       dev.log('Connected to: ${device.platformName}');
 
       var services = await device.discoverServices();
+
+      // if (device.platformName != 'XIAO BLE Sense') {
+      //   for (var service in services) {
+      //     for (var characteristic in service.characteristics) {
+      //       if (characteristic.properties.write) {
+      //         characteristic.write([0]);
+      //         dev.log('Wrote to sensor $i');
+      //       }
+      //     }
+      //   }
+      // }
+
       for (var service in services) {
         for (var characteristic in service.characteristics) {
           if (characteristic.properties.write) {
@@ -472,8 +490,8 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
         dev.log("Setting notify value to true");
         await characteristics[i]!.setNotifyValue(true);
         characteristics[i]!.lastValueStream.listen((value) {
-          dev.log("Processing data for sensor $i");
-          processData(value, i);
+          // dev.log("Processing data for sensor $i");
+          processData(value, 6);
         });
       }
 
@@ -507,6 +525,31 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
 
   void processData(List<int> value, int sensorIndex) {
     if (!isProcessingData) return;
+
+    if (sensorIndex == 6) {
+    // Convert the byte list to a string
+    String dataString = String.fromCharCodes(value);
+
+    // Log the raw received string
+    // dev.log("Raw BLE data: $dataString");
+
+    // Split the string by the comma to separate the two detection statuses
+    List<String> detections = dataString.split(',');
+
+    if (detections.length == 3) {
+      // Trim any whitespace or newline characters
+      int timestamp = int.parse(detections[0].trim());
+      String detection1 = detections[1].trim();
+      String detection2 = detections[2].trim();
+
+      // Log the timestamp and the detection values
+      dev.log("Timestamp: $timestamp, Sensor 1: $detection1, Sensor 2: $detection2");
+    } else {
+      dev.log("Unexpected data format: $dataString");
+    }
+
+    return; // Exit the function after processing for sensorIndex 6
+  }
 
     var v = Uint8List.fromList(value);
     ByteData byteData = ByteData.sublistView(v);
@@ -605,6 +648,193 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
   }
 
   Future<void> stopCollection() async {
+  elapsedTimer?.cancel();
+  String additionalInfo = '';
+  // String exercise = '';
+
+  for (var characteristic in characteristics) {
+    if (characteristic != null) {
+      await characteristic.setNotifyValue(false);
+    }
+  }
+
+  bool? saveData = await showDialog<bool>(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Save Data', style: TextStyle(color: Colors.black)),
+        content: const Text('Do you want to save the collected data?',
+            style: TextStyle(color: Colors.black)),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('No'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Yes'),
+          ),
+        ],
+      );
+    },
+  );
+
+  if (saveData == true) {
+  final _formKey = GlobalKey<FormState>();
+
+  bool? ok = await showDialog<bool>(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Enter Label and Information',
+            style: TextStyle(color: Colors.black)),
+        content: SingleChildScrollView(
+          child: Form(
+            key: _formKey, // Attach the form key here
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  value: label,
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      label = newValue!;
+                    });
+                  },
+                  items: ['Good', 'Bad', 'Idle'].map((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  decoration: const InputDecoration(labelText: 'Select Label'),
+                ),
+                DropdownButtonFormField<String>(
+                  value: gender,
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      gender = newValue!;
+                    });
+                  },
+                  items: ['Male', 'Female'].map((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  decoration: const InputDecoration(labelText: 'Select Gender'),
+                ),
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(
+                    hintText: 'Select Exercise',
+                  ),
+                  value: exercises.contains(exerciseName) ? exerciseName : null,
+                  items: exercises.map((exercise) {
+                    return DropdownMenuItem<String>(
+                      value: exercise,
+                      child: Text(exercise),
+                    );
+                  }).toList(),
+                  onChanged: (newValue) {
+                    setState(() {
+                      exerciseName = newValue!;
+                    });
+                  },
+                ),
+                TextFormField(
+                  keyboardType: TextInputType.number,
+                  onChanged: (String value) {
+                    setState(() {
+                      reps = int.tryParse(value) ?? 0;
+                    });
+                  },
+                  decoration: const InputDecoration(labelText: 'Number of Reps/Time'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter the number of reps';
+                    }
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  onChanged: (String value) {
+                    additionalInfo = value;
+                  },
+                  decoration: const InputDecoration(labelText: 'Additional Information'),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              if (_formKey.currentState?.validate() ?? false) {
+                Navigator.of(context).pop(true);
+              }
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      );
+    },
+  );
+
+
+
+      if (ok == true) {
+        while (sensorData.data.values.any((queue) => queue.isNotEmpty)) {
+          var row = organizeDataRow();
+          csvData.add(row);
+          for (var queue in sensorData.data.values) {
+            if (queue.isNotEmpty) {
+              queue.removeFirst();
+            }
+          }
+        }
+        
+        String csvString = const ListToCsvConverter().convert(csvData);
+    
+      final timestamp = DateTime.now().toString().replaceAll(RegExp(r'[^0-9]'), '');
+      String fileName = '$exerciseName-${widget.grade}-${widget.studentName}-$reps-$label-$timestamp.csv';
+      String path = await generateCsvFile(csvData, fileName);
+      bool uploadSuccess = await uploadFileToFirebase(path, additionalInfo);
+
+      if (!uploadSuccess) {
+        String savedFilePath = await saveCSVLocally(csvString, fileName);
+        
+        if (savedFilePath.isNotEmpty) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Upload Status'),
+                content: const Text('Upload failed or timed out. Data saved locally.'),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('OK'),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+      }
+    }
+  }
+
+  setState(() {
+    sensorData.clear();
+    csvData.clear();
+    elapsedTime = 0;
+    isCollecting = false;
+  });
+}
+
+Future<void> stopCollectionCountPeaks() async {
   elapsedTimer?.cancel();
   String additionalInfo = '';
   // String exercise = '';
@@ -855,7 +1085,7 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Data')),
+      appBar: AppBar(title: const Text('Data Collection with Peaks')),
       body: Center(
         child: SingleChildScrollView(
           child: Column(
@@ -886,6 +1116,15 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
                 onPressed: isCollecting ? stopCollection : null,
                 child: const Text(
                   'Stop Collection',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
+                onPressed: isCollecting ? stopCollectionCountPeaks : null,
+                child: const Text(
+                  'Count Hopping Reps with AI',
                   style: TextStyle(color: Colors.white),
                 ),
               ),
