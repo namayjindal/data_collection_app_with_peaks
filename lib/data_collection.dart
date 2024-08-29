@@ -12,7 +12,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:path_provider/path_provider.dart';
-import 'ml_pipelines/hopping/peak_detection.dart';
+import 'package:data_collection/ml_pipeline_selector.dart';
 import 'utils.dart';
 import 'package:data_collection/data_models/sensor_data.dart';
 
@@ -819,20 +819,21 @@ Future<void> stopCollectionCountPeaks() async {
             }
           }
         }
-        
-      //IMP: This is the ML Part
+
+      dev.log('Selected exercise name $exerciseName');
+              
+      // Convert the data to CSV format
       String csvString = const ListToCsvConverter().convert(csvData);
 
-      List<int> mlInfo = await processPeakData(csvData);
+      // Process the data through the correct ML pipeline based on the exercise name
+      List<int> mlInfo = await processExerciseData(exerciseName, csvData);
 
       peaks = mlInfo[0];
-
       anomalyCount = mlInfo[1];
-
       MLreps = peaks - anomalyCount;
     
       final timestamp = DateTime.now().toString().replaceAll(RegExp(r'[^0-9]'), '');
-      String fileName = '$exerciseName-${widget.grade}-${widget.studentName}-$reps-$label-$timestamp.csv';
+      String fileName = '$exerciseName-${widget.grade}-${widget.studentName}-$reps-ml_reps_$MLreps-$timestamp.csv';
       String path = await generateCsvFile(csvData, fileName);
       bool uploadSuccess = await uploadFileToFirebase(path, additionalInfo);
 
