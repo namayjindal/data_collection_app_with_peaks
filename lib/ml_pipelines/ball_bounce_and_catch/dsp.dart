@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'dart:convert';
 
-import 'package:data_collection/ml_pipelines/hopping/tflite_anomaly_detector.dart';
+import 'package:data_collection/ml_pipelines/ball_bounce_and_catch/tflite_anomaly_detector.dart';
 
 class FeatureExtractor {
   final int windowSize;

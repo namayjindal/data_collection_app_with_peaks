@@ -285,17 +285,6 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
 
       var services = await device.discoverServices();
 
-      // if (device.platformName != 'XIAO BLE Sense') {
-      //   for (var service in services) {
-      //     for (var characteristic in service.characteristics) {
-      //       if (characteristic.properties.write) {
-      //         characteristic.write([0]);
-      //         dev.log('Wrote to sensor $i');
-      //       }
-      //     }
-      //   }
-      // }
-
       for (var service in services) {
         for (var characteristic in service.characteristics) {
           if (characteristic.properties.write) {

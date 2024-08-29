@@ -1,5 +1,6 @@
 import 'dart:math';
-import 'dsp.dart';
+import 'package:data_collection/ml_pipelines/criss_cross_with_claps/dsp.dart';
+import 'dart:developer' as dev;
 
 List<double> movingAverage(List<double> signal, int windowSize) {
   List<double> result = List<double>.filled(signal.length, 0);
@@ -44,7 +45,7 @@ Future<List<int>> processPeakData(List<List<dynamic>> csvData) async {
 
   int segmentAnomalyCount = 0;
   
-  print('Number of peaks detected: ${peaks.length}');
+  dev.log('Number of peaks detected: ${peaks.length}');
   
   // Extract relevant columns (indices 2, 3, 4, 11, 12, 13)
   for (int i = 0; i < peaks.length - 1; i++) {
@@ -64,23 +65,23 @@ Future<List<int>> processPeakData(List<List<dynamic>> csvData) async {
       ]);
     }
 
-    // Print the extracted segment
-    print(segment);
+    // dev.log the extracted segment
+    dev.log(segment.toString());
 
     // Process the extracted segment
     FeatureExtractor extractor = FeatureExtractor(4);
     bool isSegmentAnomaly = await extractor.processSegment(segment);
 
-    print('Segment Anomaly Status: $isSegmentAnomaly');
+    dev.log('Segment Anomaly Status: $isSegmentAnomaly');
 
     if (isSegmentAnomaly) {
       segmentAnomalyCount++;
     }
 
-    print('---');
+    dev.log('---');
   }
 
-  print('Total Anomaly Count: $segmentAnomalyCount');
+  dev.log('Total Anomaly Count: $segmentAnomalyCount');
 
   return [peaks.length, segmentAnomalyCount];
 }
