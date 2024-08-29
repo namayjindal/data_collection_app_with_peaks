@@ -825,12 +825,17 @@ Future<void> stopCollectionCountPeaks() async {
       // Convert the data to CSV format
       String csvString = const ListToCsvConverter().convert(csvData);
 
-      // Process the data through the correct ML pipeline based on the exercise name
-      List<int> mlInfo = await processExerciseData(exerciseName, csvData);
+      List<int> mlInfo = [0, 0];
 
+      try {
+        mlInfo = await processExerciseData(exerciseName, csvData);
+      } catch (e) {
+        dev.log('Error processing exercise data: $e');
+      }
+      
       peaks = mlInfo[0];
       anomalyCount = mlInfo[1];
-      MLreps = peaks - anomalyCount;
+      MLreps = peaks - anomalyCount - 1;
     
       final timestamp = DateTime.now().toString().replaceAll(RegExp(r'[^0-9]'), '');
       String fileName = '$exerciseName-${widget.grade}-${widget.studentName}-$reps-ml_reps_$MLreps-$timestamp.csv';
@@ -963,7 +968,7 @@ Future<void> stopCollectionCountPeaks() async {
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
                 onPressed: isCollecting ? stopCollectionCountPeaks : null,
                 child: const Text(
-                  'Count Hopping Reps with AI',
+                  'Count Reps with AI',
                   style: TextStyle(color: Colors.white),
                 ),
               ),
