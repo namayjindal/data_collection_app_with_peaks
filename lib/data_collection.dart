@@ -50,12 +50,42 @@ class _DataCollectionState extends State<DataCollection> {
   int MLreps = 0;
   int anomalyCount = 0;
 
+  List<BluetoothDevice> sortedConnectedDevices = [];
+
   @override
   void initState() {
     super.initState();
-    sensorData = SensorData(List.generate(
-        FlutterBluePlus.connectedDevices.length, (index) => index));
 
+    // Manually copy and sort the connected devices based on their platformName
+    sortedConnectedDevices = List.from(FlutterBluePlus.connectedDevices);
+    
+    sortedConnectedDevices.sort((a, b) {
+      List<String> order = [
+        'Sakshi Right Hand',
+        'Sakshi Left Hand',
+        'Sakshi Right Leg',
+        'Sakshi Left Leg',
+        'Sense Right Hand',
+        'Sense Left Hand',
+        'Sense Right Leg',
+        'Sense Left Leg',
+        'Sense Ball',
+      ];
+
+      int indexA = order.indexOf(a.platformName);
+      int indexB = order.indexOf(b.platformName);
+
+      // If a device is not found in the order list, it will be placed at the end
+      if (indexA == -1) indexA = order.length;
+      if (indexB == -1) indexB = order.length;
+
+      return indexA.compareTo(indexB);
+    });
+
+    sensorData = SensorData(List.generate(
+      sortedConnectedDevices.length, (index) => index));
+
+    dev.log(sortedConnectedDevices.toString());
     loadExercises();
   }
 
@@ -92,7 +122,7 @@ class _DataCollectionState extends State<DataCollection> {
   }
 
   List<String> generateHeaderRow() {
-    List<BluetoothDevice> connectedDevices = FlutterBluePlus.connectedDevices;
+    List<BluetoothDevice> connectedDevices = sortedConnectedDevices;
     List<String> headers = [];
 
     for (BluetoothDevice device in connectedDevices) {
@@ -265,7 +295,7 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
       anomalyCount = 0;
     });
 
-    List<BluetoothDevice> devices = FlutterBluePlus.connectedDevices;
+    List<BluetoothDevice> devices = sortedConnectedDevices;
     setState(() {
       deviceCount = devices.length.clamp(1, 5);
     });
@@ -309,8 +339,8 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
         dev.log("Setting notify value to true");
         await characteristics[i]!.setNotifyValue(true);
         characteristics[i]!.lastValueStream.listen((value) {
-          // dev.log("Processing data for sensor $i");
-          processData(value, 6);
+          dev.log("Processing data for sensor $i");
+          processData(value, i);
         });
       }
 
@@ -446,7 +476,7 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
       elapsedTime = 0;
     });
 
-    List<BluetoothDevice> devices = FlutterBluePlus.connectedDevices;
+    List<BluetoothDevice> devices = sortedConnectedDevices;
     for (var device in devices) {
       await device.disconnect();
     }
@@ -842,7 +872,7 @@ Future<void> stopCollectionCountPeaks() async {
   
 
   void bandCallibration() async {
-    List<BluetoothDevice> devices = FlutterBluePlus.connectedDevices;
+    List<BluetoothDevice> devices = sortedConnectedDevices;
     for (var device in devices) {
       var services = await device.discoverServices();
       for (var service in services) {
@@ -878,7 +908,7 @@ Future<void> stopCollectionCountPeaks() async {
   }
 
   void disconnectAndNavigate() async {
-    List<BluetoothDevice> devices = FlutterBluePlus.connectedDevices;
+    List<BluetoothDevice> devices = sortedConnectedDevices;
     for (var device in devices) {
       await device.disconnect();
     }
