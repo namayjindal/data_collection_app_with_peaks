@@ -1,18 +1,14 @@
 import 'package:tflite_flutter/tflite_flutter.dart';
+import 'dart:developer';
 
 Future<bool> runTFLiteModel(List<double> inputFeatures) async {
   Interpreter? _anomaly_interpreter;
 
   try {
-    _anomaly_interpreter = await Interpreter.fromAsset('assets/hopping_anomaly_detector.tflite');
+    _anomaly_interpreter = await Interpreter.fromAsset('assets/criss_cross_with_claps_anomaly_detector.tflite');
   } catch (e) {
-    print('Failed to load model.');
-    print(e);
-    return false;
-  }
-
-  if (_anomaly_interpreter == null) {
-    print('Interpreter is null after loading.');
+    log('Failed to load model.');
+    log(e.toString());
     return false;
   }
 
@@ -24,7 +20,7 @@ Future<bool> runTFLiteModel(List<double> inputFeatures) async {
     _anomaly_interpreter.run(input, output);
 
     double anomalyScore = output[0];
-    print('Anomaly Score: $anomalyScore');
+    log('Anomaly Score: $anomalyScore');
 
     if (anomalyScore > 500) {
       return true;
@@ -34,8 +30,8 @@ Future<bool> runTFLiteModel(List<double> inputFeatures) async {
     }
 
   } catch (e) {
-    print('Error running the model:');
-    print(e);
+    log('Error running the model:');
+    log(e.toString());
     return false;
   } finally {
     _anomaly_interpreter.close();

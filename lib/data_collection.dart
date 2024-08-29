@@ -1,20 +1,20 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'dart:async';
-import 'dart:collection';
 import 'dart:developer' as dev;
 import 'dart:io';
 import 'dart:typed_data';
-import 'dart:math';
 
 import 'package:csv/csv.dart';
 import 'package:data_collection/home.dart';
-import 'package:data_collection/zephyr_data.dart';
+import 'package:data_collection/data_models/zephyr_data.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:path_provider/path_provider.dart';
-import 'peak_detection.dart';
+import 'ml_pipelines/hopping/peak_detection.dart';
+import 'utils.dart';
+import 'package:data_collection/data_models/sensor_data.dart';
 
 class DataCollection extends StatefulWidget {
   const DataCollection({
@@ -30,88 +30,6 @@ class DataCollection extends StatefulWidget {
 
   @override
   State<DataCollection> createState() => _DataCollectionState();
-}
-
-class SensorData {
-  final Map<int, Queue<ZephyrData>> data = {};
-  final List<int> sensorIds;
-  bool isAligned = false;
-  int alignmentCounter = 0;
-  int lastSyncCheckTime = 0;
-
-  SensorData(this.sensorIds) {
-    for (var id in sensorIds) {
-      data[id] = Queue<ZephyrData>();
-    }
-  }
-
-  void addData(int sensorIndex, ZephyrData zephyrData) {
-    data[sensorIndex]?.add(zephyrData);
-    if (!isAligned) {
-      alignmentCounter++;
-      if (alignmentCounter >= 5 * sensorIds.length) {
-        alignSensors();
-      }
-    }
-  }
-
-  void alignSensors() {
-    int maxTimestamp = 0;
-    for (var queue in data.values) {
-      if (queue.isNotEmpty && queue.first.field1 > maxTimestamp) {
-        maxTimestamp = queue.first.field1;
-      }
-    }
-
-    for (var queue in data.values) {
-      while (queue.isNotEmpty && queue.first.field1 < maxTimestamp) {
-        queue.removeFirst();
-      }
-    }
-
-    isAligned = true;
-    lastSyncCheckTime = maxTimestamp;
-  }
-
-  bool allSensorsHaveData() {
-    return data.values.every((queue) => queue.isNotEmpty);
-  }
-
-  List<dynamic> getSyncedData() {
-    if (allSensorsHaveData()) {
-      var sensorData = [];
-      for (var queue in data.values) {
-        var v = queue.removeFirst();
-        var l = v.splitData();
-        sensorData.addAll(l);
-      }
-      return sensorData;
-    }
-    return [];
-  }
-
-  void syncCheck() {
-    if (!isAligned) return;
-
-    int currentTime = DateTime.now().millisecondsSinceEpoch;
-    if (currentTime - lastSyncCheckTime >= 1000) {
-      int minReadings = data.values.map((queue) => queue.length).reduce(min);
-      for (var queue in data.values) {
-        while (queue.length > minReadings) {
-          queue.removeLast();
-        }
-      }
-      lastSyncCheckTime = currentTime;
-    }
-  }
-
-  void clear() {
-    for (var queue in data.values) {
-      queue.clear();
-    }
-    isAligned = false;
-    alignmentCounter = 0;
-  }
 }
 
 class _DataCollectionState extends State<DataCollection> {
@@ -141,95 +59,6 @@ class _DataCollectionState extends State<DataCollection> {
     loadExercises();
   }
 
-  // Add this list of sensor names and prefixes
-  final List<Map<String, String>> sensorPrefixes = [
-    {'name': 'Sense Right Hand', 'prefix': 'right_hand_'},
-    {'name': 'Sense Left Hand', 'prefix': 'left_hand_'},
-    {'name': 'Sense Right Leg', 'prefix': 'right_leg_'},
-    {'name': 'Sense Left Leg', 'prefix': 'left_leg_'},
-    {'name': 'Sense Ball', 'prefix': 'ball_'},
-    {'name': 'Sakshi Right Hand', 'prefix': 'right_hand_'},
-    {'name': 'Sakshi Left Hand', 'prefix': 'left_hand_'},
-    {'name': 'Sakshi Right Leg', 'prefix': 'right_leg_'},
-    {'name': 'Sakshi Left Leg', 'prefix': 'left_leg_'},
-    {'name': 'XIAO BLE Sense', 'prefix': 'xiao_'},
-  ];
-
-  final Map<String, List> gradeExercises = {
-    'Nursery': [
-      "Step Down from Height (dominant)",
-      "Step Down from Height (non-dominant)",
-      "Step over an obstacle (dominant)",
-      "Step over an obstacle (non-dominant)",
-      "Jump symmetrically",
-      "Hit Balloon Up"
-    ],
-    'LKG': [
-      "Stand on one leg (dominant)",
-      "Step over an obstacle (non-dominant)",
-      "Hop forward on one leg (dominant)",
-      "Hop forward on one leg (non-dominant)",
-      "Jumping Jack without Clap",
-      "Hit Balloon Up"
-    ],
-    'SKG': [
-      "Stand on one leg (dominant)",
-      "Stand on one leg (non-dominant)",
-      "Hop forward on one leg (dominant)",
-      "Hop forward on one leg (non-dominant)",
-      "Jumping Jack without Clap",
-      "Hit Balloon Up"
-    ],
-    'Grade 1': [
-      "Stand on one leg (dominant)",
-      "Stand on one leg (non-dominant)",
-      "Hop 9 metres (dominant)",
-      "Hop forward on one leg (non-dominant)",
-      "Skipping",
-      "Ball Bounce and Catch"
-    ],
-    'Grade 2': [
-      "Stand on one leg (dominant)",
-      "Stand on one leg (non-dominant)",
-      "Hop 9 metres (dominant)",
-      "Hop forward on one leg (non-dominant)",
-      "Criss Cross with leg forward",
-      "Ball Bounce and Catch"
-    ],
-    'Grade 3': [
-      "Stand on one leg (dominant)",
-      "Stand on one leg (non-dominant)",
-      "Hop 9 metres (dominant)",
-      "Hop 9 metres (non-dominant)",
-      "Criss Cross with leg forward",
-      "Dribbling in Fig - O"
-    ],
-    'Grade 4': [
-      "Stand on one leg (dominant)",
-      "Stand on one leg (non-dominant)",
-      "Hop 9 metres (dominant)",
-      "Hop 9 metres (non-dominant)",
-      "Criss Cross with leg forward",
-      "Dribbling in Fig - O"
-    ],
-    'Grade 5': [
-      "Stand on one leg (dominant)",
-      "Stand on one leg (non-dominant)",
-      "Hop 9 metres (dominant)",
-      "Hop 9 metres (non-dominant)",
-      "Criss Cross with Clap",
-      "Dribbling in Fig - 8"
-    ],
-    'Grade 6': [
-      "Stand on one leg (dominant)",
-      "Stand on one leg (non-dominant)",
-      "Hop 9 metres (dominant)",
-      "Hop 9 metres (non-dominant)",
-      "Forward Backward Spread Legs and Back",
-      "Dribbling in Fig - 8"
-    ],
-  };
-
   List<dynamic> exercises = [
     "Stand on one leg (dominant)",
     "Stand on one leg (non-dominant)",
@@ -249,6 +78,7 @@ class _DataCollectionState extends State<DataCollection> {
       exerciseName = '';
     }
   }
+
   List<String> getConnectedSensorPrefixes() {
     dev.log(sensorPrefixes
         .sublist(0, deviceCount)
@@ -619,11 +449,6 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
 
   void restartDataCollection() async {
     elapsedTimer?.cancel();
-    // for (var characteristic in characteristics) {
-    //   if (characteristic != null) {
-    //     await characteristic.setNotifyValue(false);
-    //   }
-    // }
 
     sensorData.clear();
     csvData.clear();
@@ -631,10 +456,6 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
     setState(() {
       elapsedTime = 0;
     });
-
-    // await device.connect();
-
-    // getData();
 
     List<BluetoothDevice> devices = FlutterBluePlus.connectedDevices;
     for (var device in devices) {
@@ -980,6 +801,7 @@ Future<void> stopCollectionCountPeaks() async {
           }
         }
         
+      //IMP: This is the ML Part
       String csvString = const ListToCsvConverter().convert(csvData);
 
       List<int> mlInfo = await processPeakData(csvData);
@@ -1022,9 +844,6 @@ Future<void> stopCollectionCountPeaks() async {
   }
 
   setState(() {
-    // peaks = 0;
-    // anomalyCount = 0;
-    // MLreps = 0;
     sensorData.clear();
     csvData.clear();
     elapsedTime = 0;
