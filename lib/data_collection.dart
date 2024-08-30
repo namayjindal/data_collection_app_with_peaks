@@ -70,6 +70,9 @@ class _DataCollectionState extends State<DataCollection> {
         'Sense Right Leg',
         'Sense Left Leg',
         'Sense Ball',
+        'Arduino',
+        'Sense Cone 1',
+        'Sense Cone 2',
       ];
 
       int indexA = order.indexOf(a.platformName);
@@ -339,8 +342,12 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
         dev.log("Setting notify value to true");
         await characteristics[i]!.setNotifyValue(true);
         characteristics[i]!.lastValueStream.listen((value) {
-          dev.log("Processing data for sensor $i");
-          processData(value, i);
+          if (device.platformName == 'Sense Cone 1') {
+            processData(value, 6);
+          } else {
+            dev.log("Processing data for sensor $i");
+            processData(value, i);
+          }
         });
       }
 
@@ -385,14 +392,14 @@ Future<String> saveCSVLocally(String csvContent, String fileName) async {
     // Split the string by the comma to separate the two detection statuses
     List<String> detections = dataString.split(',');
 
-    if (detections.length == 3) {
+    if (detections.length == 2) {
       // Trim any whitespace or newline characters
-      int timestamp = int.parse(detections[0].trim());
-      String detection1 = detections[1].trim();
-      String detection2 = detections[2].trim();
+      // int timestamp = int.parse(detections[0].trim());
+      String detection1 = detections[0].trim();
+      String detection2 = detections[1].trim();
 
       // Log the timestamp and the detection values
-      dev.log("Timestamp: $timestamp, Sensor 1: $detection1, Sensor 2: $detection2");
+      dev.log("Sensor 1: $detection1, Sensor 2: $detection2");
     } else {
       dev.log("Unexpected data format: $dataString");
     }

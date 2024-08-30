@@ -163,8 +163,8 @@ class _HomeScreenState extends State<HomeScreen> {
             'Sakshi Left Hand',
             'Sakshi Right Leg',
             'Sakshi Left Leg',
-            'XIAO BLE Sense',
-            'Arduino'
+            'Sense Cone 1',
+            'Sense Cone 2',
           ],
         ),
       ),

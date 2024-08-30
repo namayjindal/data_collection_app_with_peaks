@@ -187,8 +187,7 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
       await device.connect();
       log('Connected to ${device.platformName}');
 
-      if (device.platformName != 'XIAO BLE Sense' &&
-          device.platformName != 'Arduino') {
+      if (device.platformName != 'Sense Cone 1') {
         int batteryLevel = await readBatteryLevel(device);
         if (batteryLevel != -1) {
           showBatteryAlert(batteryLevel);
